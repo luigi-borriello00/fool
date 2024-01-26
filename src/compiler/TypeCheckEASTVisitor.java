@@ -29,148 +29,148 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode, TypeExceptio
     }
 
     @Override
-    public TypeNode visitNode(ProgLetInNode n) throws TypeException {
-        if (print) printNode(n);
-        for (Node dec : n.declarations)
+    public TypeNode visitNode(ProgLetInNode node) throws TypeException {
+        if (print) printNode(node);
+        for (Node dec : node.declarations)
             try {
                 visit(dec);
             } catch (IncomplException e) {
             } catch (TypeException e) {
                 System.out.println("Type checking error in a declaration: " + e.text);
             }
-        return visit(n.exp);
+        return visit(node.exp);
     }
 
     @Override
-    public TypeNode visitNode(ProgNode n) throws TypeException {
-        if (print) printNode(n);
-        return visit(n.exp);
+    public TypeNode visitNode(ProgNode node) throws TypeException {
+        if (print) printNode(node);
+        return visit(node.exp);
     }
 
     @Override
-    public TypeNode visitNode(FunNode n) throws TypeException {
-        if (print) printNode(n, n.id);
-        for (Node dec : n.declarations)
+    public TypeNode visitNode(FunNode node) throws TypeException {
+        if (print) printNode(node, node.id);
+        for (Node dec : node.declarations)
             try {
                 visit(dec);
             } catch (IncomplException e) {
             } catch (TypeException e) {
                 System.out.println("Type checking error in a declaration: " + e.text);
             }
-        if (!isSubtype(visit(n.exp), ckvisit(n.retType)))
-            throw new TypeException("Wrong return type for function " + n.id, n.getLine());
+        if (!isSubtype(visit(node.exp), ckvisit(node.retType)))
+            throw new TypeException("Wrong return type for function " + node.id, node.getLine());
         return null;
     }
 
     @Override
-    public TypeNode visitNode(VarNode n) throws TypeException {
-        if (print) printNode(n, n.id);
-        if (!isSubtype(visit(n.exp), ckvisit(n.getType())))
-            throw new TypeException("Incompatible value for variable " + n.id, n.getLine());
+    public TypeNode visitNode(VarNode node) throws TypeException {
+        if (print) printNode(node, node.id);
+        if (!isSubtype(visit(node.exp), ckvisit(node.getType())))
+            throw new TypeException("Incompatible value for variable " + node.id, node.getLine());
         return null;
     }
 
     @Override
-    public TypeNode visitNode(PrintNode n) throws TypeException {
-        if (print) printNode(n);
-        return visit(n.exp);
+    public TypeNode visitNode(PrintNode node) throws TypeException {
+        if (print) printNode(node);
+        return visit(node.exp);
     }
 
     @Override
-    public TypeNode visitNode(IfNode n) throws TypeException {
-        if (print) printNode(n);
-        if (!(isSubtype(visit(n.condition), new BoolTypeNode())))
-            throw new TypeException("Non boolean condition in if", n.getLine());
-        TypeNode t = visit(n.thenBranch);
-        TypeNode e = visit(n.elseBranch);
+    public TypeNode visitNode(IfNode node) throws TypeException {
+        if (print) printNode(node);
+        if (!(isSubtype(visit(node.condition), new BoolTypeNode())))
+            throw new TypeException("Non boolean condition in if", node.getLine());
+        TypeNode t = visit(node.thenBranch);
+        TypeNode e = visit(node.elseBranch);
         if (isSubtype(t, e)) return e;
         if (isSubtype(e, t)) return t;
-        throw new TypeException("Incompatible types in then-else branches", n.getLine());
+        throw new TypeException("Incompatible types in then-else branches", node.getLine());
     }
 
     @Override
-    public TypeNode visitNode(EqualNode n) throws TypeException {
-        if (print) printNode(n);
-        TypeNode l = visit(n.left);
-        TypeNode r = visit(n.right);
+    public TypeNode visitNode(EqualNode node) throws TypeException {
+        if (print) printNode(node);
+        TypeNode l = visit(node.left);
+        TypeNode r = visit(node.right);
         if (!(isSubtype(l, r) || isSubtype(r, l)))
-            throw new TypeException("Incompatible types in equal", n.getLine());
+            throw new TypeException("Incompatible types in equal", node.getLine());
         return new BoolTypeNode();
     }
 
     @Override
-    public TypeNode visitNode(TimesNode n) throws TypeException {
-        if (print) printNode(n);
-        if (!(isSubtype(visit(n.left), new IntTypeNode())
-                && isSubtype(visit(n.right), new IntTypeNode())))
-            throw new TypeException("Non integers in multiplication", n.getLine());
+    public TypeNode visitNode(TimesNode node) throws TypeException {
+        if (print) printNode(node);
+        if (!(isSubtype(visit(node.left), new IntTypeNode())
+                && isSubtype(visit(node.right), new IntTypeNode())))
+            throw new TypeException("Non integers in multiplication", node.getLine());
         return new IntTypeNode();
     }
 
     @Override
-    public TypeNode visitNode(PlusNode n) throws TypeException {
-        if (print) printNode(n);
-        if (!(isSubtype(visit(n.left), new IntTypeNode())
-                && isSubtype(visit(n.right), new IntTypeNode())))
-            throw new TypeException("Non integers in sum", n.getLine());
+    public TypeNode visitNode(PlusNode node) throws TypeException {
+        if (print) printNode(node);
+        if (!(isSubtype(visit(node.left), new IntTypeNode())
+                && isSubtype(visit(node.right), new IntTypeNode())))
+            throw new TypeException("Non integers in sum", node.getLine());
         return new IntTypeNode();
     }
 
     @Override
-    public TypeNode visitNode(CallNode n) throws TypeException {
-        if (print) printNode(n, n.id);
-        TypeNode t = visit(n.entry);
+    public TypeNode visitNode(CallNode node) throws TypeException {
+        if (print) printNode(node, node.id);
+        TypeNode t = visit(node.entry);
         if (!(t instanceof ArrowTypeNode))
-            throw new TypeException("Invocation of a non-function " + n.id, n.getLine());
+            throw new TypeException("Invocation of a non-function " + node.id, node.getLine());
         ArrowTypeNode at = (ArrowTypeNode) t;
-        if (!(at.parameters.size() == n.arguments.size()))
-            throw new TypeException("Wrong number of parameters in the invocation of " + n.id, n.getLine());
-        for (int i = 0; i < n.arguments.size(); i++)
-            if (!(isSubtype(visit(n.arguments.get(i)), at.parameters.get(i))))
-                throw new TypeException("Wrong type for " + (i + 1) + "-th parameter in the invocation of " + n.id, n.getLine());
+        if (!(at.parameters.size() == node.arguments.size()))
+            throw new TypeException("Wrong number of parameters in the invocation of " + node.id, node.getLine());
+        for (int i = 0; i < node.arguments.size(); i++)
+            if (!(isSubtype(visit(node.arguments.get(i)), at.parameters.get(i))))
+                throw new TypeException("Wrong type for " + (i + 1) + "-th parameter in the invocation of " + node.id, node.getLine());
         return at.returnType;
     }
 
     @Override
-    public TypeNode visitNode(IdNode n) throws TypeException {
-        if (print) printNode(n, n.id);
-        TypeNode t = visit(n.entry);
+    public TypeNode visitNode(IdNode node) throws TypeException {
+        if (print) printNode(node, node.id);
+        TypeNode t = visit(node.entry);
         if (t instanceof ArrowTypeNode)
-            throw new TypeException("Wrong usage of function identifier " + n.id, n.getLine());
+            throw new TypeException("Wrong usage of function identifier " + node.id, node.getLine());
         return t;
     }
 
     @Override
-    public TypeNode visitNode(BoolNode n) {
-        if (print) printNode(n, n.val.toString());
+    public TypeNode visitNode(BoolNode node) {
+        if (print) printNode(node, node.val.toString());
         return new BoolTypeNode();
     }
 
     @Override
-    public TypeNode visitNode(IntNode n) {
-        if (print) printNode(n, n.val.toString());
+    public TypeNode visitNode(IntNode node) {
+        if (print) printNode(node, node.val.toString());
         return new IntTypeNode();
     }
 
 // gestione tipi incompleti	(se lo sono lancia eccezione)
 
     @Override
-    public TypeNode visitNode(ArrowTypeNode n) throws TypeException {
-        if (print) printNode(n);
-        for (Node par : n.parameters) visit(par);
-        visit(n.returnType, "->"); //marks return type
+    public TypeNode visitNode(ArrowTypeNode node) throws TypeException {
+        if (print) printNode(node);
+        for (Node par : node.parameters) visit(par);
+        visit(node.returnType, "->"); //marks return type
         return null;
     }
 
     @Override
-    public TypeNode visitNode(BoolTypeNode n) {
-        if (print) printNode(n);
+    public TypeNode visitNode(BoolTypeNode node) {
+        if (print) printNode(node);
         return null;
     }
 
     @Override
-    public TypeNode visitNode(IntTypeNode n) {
-        if (print) printNode(n);
+    public TypeNode visitNode(IntTypeNode node) {
+        if (print) printNode(node);
         return null;
     }
 
@@ -181,5 +181,70 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode, TypeExceptio
         if (print) printSTentry("type");
         return ckvisit(entry.type);
     }
+
+    // OPERATOR EXTENSION
+
+    @Override
+    public TypeNode visitNode(GreaterEqualNode node) throws TypeException {
+        if (print) printNode(node);
+        if (!(isSubtype(visit(node.left), new IntTypeNode())
+                && isSubtype(visit(node.right), new IntTypeNode())))
+            throw new TypeException("Non integers in greater-equal", node.getLine());
+        return new BoolTypeNode();
+    }
+
+    @Override
+    public TypeNode visitNode(LessEqualNode node) throws TypeException {
+        if (print) printNode(node);
+        if (!(isSubtype(visit(node.left), new IntTypeNode())
+                && isSubtype(visit(node.right), new IntTypeNode())))
+            throw new TypeException("Non integers in less-equal", node.getLine());
+        return new BoolTypeNode();
+    }
+
+    @Override
+    public TypeNode visitNode(NotNode node) throws TypeException {
+        if (print) printNode(node);
+        if (!(isSubtype(visit(node.exp), new BoolTypeNode())))
+            throw new TypeException("Non boolean in not", node.getLine());
+        return new BoolTypeNode();
+    }
+
+    @Override
+    public TypeNode visitNode(OrNode node) throws TypeException {
+        if (print) printNode(node);
+        if (!(isSubtype(visit(node.left), new BoolTypeNode())
+                && isSubtype(visit(node.right), new BoolTypeNode())))
+            throw new TypeException("Non boolean in or", node.getLine());
+        return new BoolTypeNode();
+    }
+
+    @Override
+    public TypeNode visitNode(MinusNode node) throws TypeException {
+        if (print) printNode(node);
+        if (!(isSubtype(visit(node.left), new IntTypeNode())
+                && isSubtype(visit(node.right), new IntTypeNode())))
+            throw new TypeException("Non integers in minus", node.getLine());
+        return new IntTypeNode();
+    }
+
+    @Override
+    public TypeNode visitNode(DivNode node) throws TypeException {
+        if (print) printNode(node);
+        if (!(isSubtype(visit(node.left), new IntTypeNode())
+                && isSubtype(visit(node.right), new IntTypeNode())))
+            throw new TypeException("Non integers in division", node.getLine());
+        return new IntTypeNode();
+    }
+
+    @Override
+    public TypeNode visitNode(AndNode node) throws TypeException {
+        if (print) printNode(node);
+        if (!(isSubtype(visit(node.left), new BoolTypeNode())
+                && isSubtype(visit(node.right), new BoolTypeNode())))
+            throw new TypeException("Non boolean in and", node.getLine());
+        return new BoolTypeNode();
+    }
+
 
 }

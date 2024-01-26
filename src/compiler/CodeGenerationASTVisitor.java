@@ -16,37 +16,37 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
     } //enables print for debugging
 
     @Override
-    public String visitNode(ProgLetInNode n) {
-        if (print) printNode(n);
+    public String visitNode(ProgLetInNode node) {
+        if (print) printNode(node);
         String declCode = null;
-        for (Node dec : n.declarations) declCode = nlJoin(declCode, visit(dec));
+        for (Node dec : node.declarations) declCode = nlJoin(declCode, visit(dec));
         return nlJoin(
                 "push 0",
                 declCode, // generate code for declarations (allocation)
-                visit(n.exp),
+                visit(node.exp),
                 "halt",
                 getCode()
         );
     }
 
     @Override
-    public String visitNode(ProgNode n) {
-        if (print) printNode(n);
+    public String visitNode(ProgNode node) {
+        if (print) printNode(node);
         return nlJoin(
-                visit(n.exp),
+                visit(node.exp),
                 "halt"
         );
     }
 
     @Override
-    public String visitNode(FunNode n) {
-        if (print) printNode(n, n.id);
+    public String visitNode(FunNode node) {
+        if (print) printNode(node, node.id);
         String declCode = null, popDecl = null, popParl = null;
-        for (Node dec : n.declarations) {
+        for (Node dec : node.declarations) {
             declCode = nlJoin(declCode, visit(dec));
             popDecl = nlJoin(popDecl, "pop");
         }
-        for (int i = 0; i < n.parameters.size(); i++) popParl = nlJoin(popParl, "pop");
+        for (int i = 0; i < node.parameters.size(); i++) popParl = nlJoin(popParl, "pop");
         String funl = freshFunLabel();
         putCode(
                 nlJoin(
@@ -54,7 +54,7 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
                         "cfp", // set $fp to $sp value
                         "lra", // load $ra value
                         declCode, // generate code for local declarations (they use the new $fp!!!)
-                        visit(n.exp), // generate code for function body expression
+                        visit(node.exp), // generate code for function body expression
                         "stm", // set $tm to popped value (function result)
                         popDecl, // remove local declarations from stack
                         "sra", // set $ra to popped value
@@ -70,45 +70,45 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
     }
 
     @Override
-    public String visitNode(VarNode n) {
-        if (print) printNode(n, n.id);
-        return visit(n.exp);
+    public String visitNode(VarNode node) {
+        if (print) printNode(node, node.id);
+        return visit(node.exp);
     }
 
     @Override
-    public String visitNode(PrintNode n) {
-        if (print) printNode(n);
+    public String visitNode(PrintNode node) {
+        if (print) printNode(node);
         return nlJoin(
-                visit(n.exp),
+                visit(node.exp),
                 "print"
         );
     }
 
     @Override
-    public String visitNode(IfNode n) {
-        if (print) printNode(n);
+    public String visitNode(IfNode node) {
+        if (print) printNode(node);
         String l1 = freshLabel();
         String l2 = freshLabel();
         return nlJoin(
-                visit(n.condition),
+                visit(node.condition),
                 "push 1",
                 "beq " + l1,
-                visit(n.elseBranch),
+                visit(node.elseBranch),
                 "b " + l2,
                 l1 + ":",
-                visit(n.thenBranch),
+                visit(node.thenBranch),
                 l2 + ":"
         );
     }
 
     @Override
-    public String visitNode(EqualNode n) {
-        if (print) printNode(n);
+    public String visitNode(EqualNode node) {
+        if (print) printNode(node);
         String l1 = freshLabel();
         String l2 = freshLabel();
         return nlJoin(
-                visit(n.left),
-                visit(n.right),
+                visit(node.left),
+                visit(node.right),
                 "beq " + l1,
                 "push 0",
                 "b " + l2,
@@ -119,31 +119,31 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
     }
 
     @Override
-    public String visitNode(TimesNode n) {
-        if (print) printNode(n);
+    public String visitNode(TimesNode node) {
+        if (print) printNode(node);
         return nlJoin(
-                visit(n.left),
-                visit(n.right),
+                visit(node.left),
+                visit(node.right),
                 "mult"
         );
     }
 
     @Override
-    public String visitNode(PlusNode n) {
-        if (print) printNode(n);
+    public String visitNode(PlusNode node) {
+        if (print) printNode(node);
         return nlJoin(
-                visit(n.left),
-                visit(n.right),
+                visit(node.left),
+                visit(node.right),
                 "add"
         );
     }
 
     @Override
-    public String visitNode(CallNode n) {
-        if (print) printNode(n, n.id);
+    public String visitNode(CallNode node) {
+        if (print) printNode(node, node.id);
         String argCode = null, getAR = null;
-        for (int i = n.arguments.size() - 1; i >= 0; i--) argCode = nlJoin(argCode, visit(n.arguments.get(i)));
-        for (int i = 0; i < n.nestingLevel - n.entry.nl; i++) getAR = nlJoin(getAR, "lw");
+        for (int i = node.arguments.size() - 1; i >= 0; i--) argCode = nlJoin(argCode, visit(node.arguments.get(i)));
+        for (int i = 0; i < node.nestingLevel - node.entry.nl; i++) getAR = nlJoin(getAR, "lw");
         return nlJoin(
                 "lfp", // load Control Link (pointer to frame of function "id" caller)
                 argCode, // generate code for argument expressions in reversed order
@@ -152,34 +152,147 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
                 "stm", // set $tm to popped value (with the aim of duplicating top of stack)
                 "ltm", // load Access Link (pointer to frame of function "id" declaration)
                 "ltm", // duplicate top of stack
-                "push " + n.entry.offset, "add", // compute address of "id" declaration
+                "push " + node.entry.offset, "add", // compute address of "id" declaration
                 "lw", // load address of "id" function
                 "js"  // jump to popped address (saving address of subsequent instruction in $ra)
         );
     }
 
     @Override
-    public String visitNode(IdNode n) {
-        if (print) printNode(n, n.id);
+    public String visitNode(IdNode node) {
+        if (print) printNode(node, node.id);
         String getAR = null;
-        for (int i = 0; i < n.nl - n.entry.nl; i++) getAR = nlJoin(getAR, "lw");
+        for (int i = 0; i < node.nl - node.entry.nl; i++) getAR = nlJoin(getAR, "lw");
         return nlJoin(
                 "lfp", getAR, // retrieve address of frame containing "id" declaration
                 // by following the static chain (of Access Links)
-                "push " + n.entry.offset, "add", // compute address of "id" declaration
+                "push " + node.entry.offset, "add", // compute address of "id" declaration
                 "lw" // load value of "id" variable
         );
     }
 
     @Override
-    public String visitNode(BoolNode n) {
-        if (print) printNode(n, n.val.toString());
-        return "push " + (n.val ? 1 : 0);
+    public String visitNode(BoolNode node) {
+        if (print) printNode(node, node.val.toString());
+        return "push " + (node.val ? 1 : 0);
     }
 
     @Override
-    public String visitNode(IntNode n) {
-        if (print) printNode(n, n.val.toString());
-        return "push " + n.val;
+    public String visitNode(IntNode node) {
+        if (print) printNode(node, node.val.toString());
+        return "push " + node.val;
+    }
+
+    @Override
+    public String visitNode(GreaterEqualNode node) {
+        if (print) printNode(node);
+        final String falseLabel = freshLabel();
+        final String endLabel = freshLabel();
+        return nlJoin(
+                visit(node.left),        // generate code for left expression
+                visit(node.right),              // generate code for right expression
+                "push" + 1,                       // push 1
+                "sub",                            // subtract 1 from right value
+                "bleq" + falseLabel, // if left value is not less or equal than right value, jump to false label
+                "push" + 1,                       // push 1 (the result)
+                "b" + endLabel,              // jump to end label
+                falseLabel + ":",               // false label
+                "push" + 0,                       // push 0 (the result)
+                endLabel + ":"                  // end label
+        );
+    }
+
+    @Override
+    public String visitNode(LessEqualNode node) {
+        if (print) printNode(node);
+        final String trueLabel = freshLabel();
+        final String endLabel = freshLabel();
+        return nlJoin(
+                visit(node.left),        // generate code for left expression
+                visit(node.right),              // generate code for right expression
+                "bleq" + trueLabel,  // if left value is less or equal than right value, jump to true label
+                "push" + 0,                       // push 0 (the result)
+                "b" + endLabel,              // jump to end label
+                trueLabel + ":",                // true label
+                "push" + 1,                       // push 1 (the result)
+                endLabel + ":"                  // end label
+        );
+    }
+
+    @Override
+    public String visitNode(NotNode node) {
+        if (print) printNode(node);
+        final String itWasFalseLabel = freshLabel();
+        final String endLabel = freshLabel();
+        return nlJoin(
+                visit(node.exp),          // generate code for expression
+                "push" + 0,                       // push 0
+                "beq" + itWasFalseLabel, // if value is 0, jump to itWasFalseLabel
+                "push" + 0,                       // push 0 (the result)
+                "b" + endLabel,              // jump to end label
+                itWasFalseLabel + ":",          // itWasFalseLabel
+                "push" + 1,                       // push 1 (the result)
+                endLabel + ":"                  // end label
+        );
+    }
+
+    @Override
+    public String visitNode(OrNode node) {
+        if (print) printNode(node);
+        final String trueLabel = freshLabel();
+        final String endLabel = freshLabel();
+        return nlJoin(
+                visit(node.left),    // generate code for left expression
+                "push" + 1,                   // push 1
+                "beq" + trueLabel,   // if value is 1, jump to true label
+                visit(node.right),          // generate code for right expression
+                "push" + 1,                   // push 1
+                "beq" + trueLabel,   // if value is 1, jump to true label
+                "push" + 0,                   // push 0 (the result)
+                "b" + endLabel,          // jump to end label
+                trueLabel + ":",            // true label
+                "push" + 1,                   // push 1 (the result)
+                endLabel + ":"              // end label
+        );
+    }
+
+    @Override
+    public String visitNode(AndNode node) {
+        if (print) printNode(node);
+        final String falseLabel = freshLabel();
+        final String endLabel = freshLabel();
+        return nlJoin(
+                visit(node.left),    // generate code for left expression
+                "push" + 0,                   // push 0
+                "beq" + falseLabel,  // if value is 0, jump to false label
+                visit(node.right),          // generate code for right expression
+                "push" + 0,                   // push 0
+                "beq" + falseLabel,  // if value is 0, jump to false label
+                "push" + 1,                   // push 1 (the result)
+                "b" + endLabel,          // jump to end label
+                falseLabel + ":",           // false label
+                "push" + 0,                   // push 0 (the result)
+                endLabel + ":"              // end label
+        );
+    }
+
+    @Override
+    public String visitNode(MinusNode node) {
+        if (print) printNode(node);
+        return nlJoin(
+                visit(node.left),    // generate code for left expression
+                visit(node.right),          // generate code for right expression
+                "sub"                   // subtract right value from left value
+        );
+    }
+
+    @Override
+    public String visitNode(DivNode node) {
+        if (print) printNode(node);
+        return nlJoin(
+                visit(node.left),    // generate code for left expression
+                visit(node.right),          // generate code for right expression
+                "div"                   // divide left value by right value
+        );
     }
 }
