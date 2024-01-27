@@ -8,6 +8,28 @@ import static compiler.lib.FOOLlib.*;
 
 public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidException> {
 
+    // Stack Machine Code Instructions
+    public static final String COPY_FP = "cfp";
+    public static final String LOAD_RA = "lra";
+    public static final String SET_TM = "stm";
+    public static final String PUSH = "push ";
+    public static final String HALT = "halt";
+    public static final String SET_RA = "sra";
+    public static final String POP = "pop";
+    public static final String SET_FP = "sfp";
+    public static final String LOAD_TM = "ltm";
+    public static final String JS = "js";
+    public static final String BRANCH_EQUAL = "beq ";
+    public static final String BRANCH = "b ";
+    public static final String MULTIPLY = "mult";
+    public static final String ADD = "add";
+    public static final String PRINT = "print";
+    public static final String LOAD_FP = "lfp";
+    public static final String LOAD_W = "lw";
+    public static final String SUB = "sub";
+    public static final String BRANCH_LESS_EQ = "bleq ";
+    public static final String DIV = "div";
+
     CodeGenerationASTVisitor() {
     }
 
@@ -21,10 +43,10 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
         String declCode = null;
         for (Node dec : node.declarations) declCode = nlJoin(declCode, visit(dec));
         return nlJoin(
-                "push 0",
+                PUSH + 0,
                 declCode, // generate code for declarations (allocation)
                 visit(node.exp),
-                "halt",
+                HALT,
                 getCode()
         );
     }
@@ -34,7 +56,7 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
         if (print) printNode(node);
         return nlJoin(
                 visit(node.exp),
-                "halt"
+                HALT
         );
     }
 
@@ -44,26 +66,26 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
         String declCode = null, popDecl = null, popParl = null;
         for (Node dec : node.declarations) {
             declCode = nlJoin(declCode, visit(dec));
-            popDecl = nlJoin(popDecl, "pop");
+            popDecl = nlJoin(popDecl, POP);
         }
-        for (Node parameter : node.parameters) popParl = nlJoin(popParl, "pop");
+        for (Node parameter : node.parameters) popParl = nlJoin(popParl, POP);
         String funl = freshFunLabel();
         putCode(
                 nlJoin(
                         funl + ":",
-                        "cfp", // set $fp to $sp value
-                        "lra", // load $ra value
+                        COPY_FP, // set $fp to $sp value
+                        LOAD_RA, // load $ra value
                         declCode, // generate code for local declarations (they use the new $fp!!!)
                         visit(node.exp), // generate code for function body expression
-                        "stm", // set $tm to popped value (function result)
+                        SET_TM, // set $tm to popped value (function result)
                         popDecl, // remove local declarations from stack
-                        "sra", // set $ra to popped value
-                        "pop", // remove Access Link from stack
+                        SET_RA, // set $ra to popped value
+                        POP, // remove Access Link from stack
                         popParl, // remove parameters from stack
-                        "sfp", // set $fp to popped value (Control Link)
-                        "ltm", // load $tm value (function result)
-                        "lra", // load $ra value
-                        "js"  // jump to to popped address
+                        SET_FP, // set $fp to popped value (Control Link)
+                        LOAD_TM, // load $tm value (function result)
+                        LOAD_RA, // load $ra value
+                        JS  // jump to popped address
                 )
         );
         return "push " + funl;
@@ -80,7 +102,7 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
         if (print) printNode(node);
         return nlJoin(
                 visit(node.exp),
-                "print"
+                PRINT
         );
     }
 
@@ -91,10 +113,10 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
         String elseLabel = freshLabel();
         return nlJoin(
                 visit(node.condition),
-                "push 1",
-                "beq " + thenLabel,
+                PUSH + 1,
+                BRANCH_EQUAL + thenLabel,
                 visit(node.elseBranch),
-                "b " + elseLabel,
+                BRANCH + elseLabel,
                 thenLabel + ":",
                 visit(node.thenBranch),
                 elseLabel + ":"
@@ -109,11 +131,11 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
         return nlJoin(
                 visit(node.left),
                 visit(node.right),
-                "beq " + trueLabel,
-                "push 0",
-                "b " + falseLabel,
+                BRANCH_EQUAL + trueLabel,
+                PUSH + 0,
+                BRANCH + falseLabel,
                 trueLabel + ":",
-                "push 1",
+                PUSH + 1,
                 falseLabel + ":"
         );
     }
@@ -124,7 +146,7 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
         return nlJoin(
                 visit(node.left),
                 visit(node.right),
-                "mult"
+                MULTIPLY
         );
     }
 
@@ -134,7 +156,7 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
         return nlJoin(
                 visit(node.left),
                 visit(node.right),
-                "add"
+                ADD
         );
     }
 
@@ -143,18 +165,18 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
         if (print) printNode(node, node.id);
         String argCode = null, getAR = null;
         for (int i = node.arguments.size() - 1; i >= 0; i--) argCode = nlJoin(argCode, visit(node.arguments.get(i)));
-        for (int i = 0; i < node.nestingLevel - node.entry.nestingLevel; i++) getAR = nlJoin(getAR, "lw");
+        for (int i = 0; i < node.nestingLevel - node.entry.nestingLevel; i++) getAR = nlJoin(getAR, LOAD_W);
         return nlJoin(
-                "lfp", // load Control Link (pointer to frame of function "id" caller)
+                LOAD_FP, // load Control Link (pointer to frame of function "id" caller)
                 argCode, // generate code for argument expressions in reversed order
-                "lfp", getAR, // retrieve address of frame containing "id" declaration
+                LOAD_FP, getAR, // retrieve address of frame containing "id" declaration
                 // by following the static chain (of Access Links)
-                "stm", // set $tm to popped value (with the aim of duplicating top of stack)
-                "ltm", // load Access Link (pointer to frame of function "id" declaration)
-                "ltm", // duplicate top of stack
-                "push " + node.entry.offset, "add", // compute address of "id" declaration
-                "lw", // load address of "id" function
-                "js"  // jump to popped address (saving address of subsequent instruction in $ra)
+                SET_TM, // set $tm to popped value (with the aim of duplicating top of stack)
+                LOAD_TM, // load Access Link (pointer to frame of function "id" declaration)
+                LOAD_TM, // duplicate top of stack
+                PUSH + node.entry.offset, ADD, // compute address of "id" declaration
+                LOAD_W, // load address of "id" function
+                JS  // jump to popped address (saving address of subsequent instruction in $ra)
         );
     }
 
@@ -162,25 +184,25 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
     public String visitNode(IdNode node) {
         if (print) printNode(node, node.id);
         String getAR = null;
-        for (int i = 0; i < node.nl - node.entry.nestingLevel; i++) getAR = nlJoin(getAR, "lw");
+        for (int i = 0; i < node.nl - node.entry.nestingLevel; i++) getAR = nlJoin(getAR, LOAD_W);
         return nlJoin(
-                "lfp", getAR, // retrieve address of frame containing "id" declaration
+                LOAD_FP, getAR, // retrieve address of frame containing "id" declaration
                 // by following the static chain (of Access Links)
-                "push " + node.entry.offset, "add", // compute address of "id" declaration
-                "lw" // load value of "id" variable
+                PUSH + node.entry.offset, ADD, // compute address of "id" declaration
+                LOAD_W // load value of "id" variable
         );
     }
 
     @Override
     public String visitNode(BoolNode node) {
         if (print) printNode(node, node.val.toString());
-        return "push " + (node.val ? 1 : 0);
+        return PUSH + (node.val ? 1 : 0);
     }
 
     @Override
     public String visitNode(IntNode node) {
         if (print) printNode(node, node.val.toString());
-        return "push " + node.val;
+        return PUSH + node.val;
     }
 
     @Override
@@ -191,13 +213,13 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
         return nlJoin(
                 visit(node.left),        // generate code for left expression
                 visit(node.right),              // generate code for right expression
-                "push " + 1,                       // push 1
-                "sub",                            // subtract 1 from right value
-                "bleq " + falseLabel, // if left value is not less or equal than right value, jump to false label
-                "push " + 1,                       // push 1 (the result)
-                "b " + endLabel,              // jump to end label
+                PUSH + 1,                       // push 1
+                SUB,                            // subtract 1 from right value
+                BRANCH_LESS_EQ + falseLabel, // if left value is not less or equal than right value, jump to false label
+                PUSH + 1,                       // push 1 (the result)
+                BRANCH + endLabel,              // jump to end label
                 falseLabel + ":",               // false label
-                "push " + 0,                       // push 0 (the result)
+                PUSH + 0,                       // push 0 (the result)
                 endLabel + ":"                  // end label
         );
     }
@@ -210,11 +232,11 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
         return nlJoin(
                 visit(node.left),        // generate code for left expression
                 visit(node.right),              // generate code for right expression
-                "bleq " + trueLabel,  // if left value is less or equal than right value, jump to true label
-                "push " + 0,                       // push 0 (the result)
-                "b " + endLabel,              // jump to end label
+                BRANCH_LESS_EQ + trueLabel,  // if left value is less or equal than right value, jump to true label
+                PUSH + 0,                       // push 0 (the result)
+                BRANCH + endLabel,              // jump to end label
                 trueLabel + ":",                // true label
-                "push " + 1,                       // push 1 (the result)
+                PUSH + 1,                       // push 1 (the result)
                 endLabel + ":"                  // end label
         );
     }
@@ -226,12 +248,12 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
         final String endLabel = freshLabel();
         return nlJoin(
                 visit(node.exp),          // generate code for expression
-                "push " + 0,                       // push 0
-                "beq " + itWasFalseLabel, // if value is 0, jump to itWasFalseLabel
-                "push " + 0,                       // push 0 (the result)
-                "b " + endLabel,              // jump to end label
+                PUSH + 0,                       // push 0
+                BRANCH_EQUAL + itWasFalseLabel, // if value is 0, jump to itWasFalseLabel
+                PUSH + 0,                       // push 0 (the result)
+                BRANCH + endLabel,              // jump to end label
                 itWasFalseLabel + ":",          // itWasFalseLabel
-                "push " + 1,                       // push 1 (the result)
+                PUSH + 1,                       // push 1 (the result)
                 endLabel + ":"                  // end label
         );
     }
@@ -243,15 +265,15 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
         final String endLabel = freshLabel();
         return nlJoin(
                 visit(node.left),    // generate code for left expression
-                "push " + 1,                   // push 1
-                "beq " + trueLabel,   // if value is 1, jump to true label
+                PUSH + 1,                   // push 1
+                BRANCH_EQUAL + trueLabel,   // if value is 1, jump to true label
                 visit(node.right),          // generate code for right expression
-                "push " + 1,                   // push 1
-                "beq " + trueLabel,   // if value is 1, jump to true label
-                "push " + 0,                   // push 0 (the result)
-                "b " + endLabel,          // jump to end label
+                PUSH + 1,                   // push 1
+                BRANCH_EQUAL + trueLabel,   // if value is 1, jump to true label
+                PUSH + 0,                   // push 0 (the result)
+                BRANCH + endLabel,          // jump to end label
                 trueLabel + ":",            // true label
-                "push " + 1,                   // push 1 (the result)
+                PUSH + 1,                   // push 1 (the result)
                 endLabel + ":"              // end label
         );
     }
@@ -263,15 +285,15 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
         final String endLabel = freshLabel();
         return nlJoin(
                 visit(node.left),    // generate code for left expression
-                "push" + 0,                   // push 0
-                "beq" + falseLabel,  // if value is 0, jump to false label
+                PUSH + 0,                   // push 0
+                BRANCH_EQUAL + falseLabel,  // if value is 0, jump to false label
                 visit(node.right),          // generate code for right expression
-                "push" + 0,                   // push 0
-                "beq" + falseLabel,  // if value is 0, jump to false label
-                "push" + 1,                   // push 1 (the result)
-                "b" + endLabel,          // jump to end label
+                PUSH + 0,                   // push 0
+                BRANCH_EQUAL + falseLabel,  // if value is 0, jump to false label
+                PUSH + 1,                   // push 1 (the result)
+                BRANCH + endLabel,          // jump to end label
                 falseLabel + ":",           // false label
-                "push" + 0,                   // push 0 (the result)
+                PUSH + 0,                   // push 0 (the result)
                 endLabel + ":"              // end label
         );
     }
@@ -282,7 +304,7 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
         return nlJoin(
                 visit(node.left),    // generate code for left expression
                 visit(node.right),          // generate code for right expression
-                "sub"                   // subtract right value from left value
+                SUB                   // subtract right value from left value
         );
     }
 
@@ -292,7 +314,7 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
         return nlJoin(
                 visit(node.left),    // generate code for left expression
                 visit(node.right),          // generate code for right expression
-                "div"                   // divide left value by right value
+                DIV                   // divide left value by right value
         );
     }
 }
