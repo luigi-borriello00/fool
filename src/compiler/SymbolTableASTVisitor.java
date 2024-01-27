@@ -8,7 +8,7 @@ import compiler.lib.*;
 
 public class SymbolTableASTVisitor extends BaseASTVisitor<Void, VoidException> {
 
-    private List<Map<String, STentry>> symbleTable = new ArrayList<>();
+    private List<Map<String, STentry>> symbolTable = new ArrayList<>();
     private int nestingLevel = 0; // current nesting level
     private int decOffset = -2; // counter for offset of local declarations at current nesting level
     int stErrors = 0;
@@ -35,13 +35,13 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void, VoidException> {
         int j = nestingLevel;
         STentry entry = null;
         while (j >= 0 && entry == null)
-            entry = symbleTable.get(j--).get(id);
+            entry = symbolTable.get(j--).get(id);
         return entry;
     }
 
     /**
      * Visit a ProgLetInNode.
-     * A new scope is created and the declarations are visited.
+     * A new scope is created and then the declarations are visited.
      * Then the expression is visited.
      * The scope is then removed.
      *
@@ -51,10 +51,10 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void, VoidException> {
     @Override
     public Void visitNode(ProgLetInNode node) {
         if (print) printNode(node);
-        this.symbleTable.add(new HashMap<>());
+        this.symbolTable.add(new HashMap<>());
         node.declarations.forEach(this::visit);
         visit(node.exp);
-        symbleTable.remove(0);
+        symbolTable.remove(0);
         return null;
     }
 
@@ -84,28 +84,28 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void, VoidException> {
     @Override
     public Void visitNode(FunNode node) {
         if (print) printNode(node);
-        Map<String, STentry> currentSymbleTable = symbleTable.get(nestingLevel);
+        Map<String, STentry> currentSymbolTable = symbolTable.get(nestingLevel);
         List<TypeNode> parametersType = new ArrayList<>();
         node.parameters.forEach(par -> parametersType.add(par.getType()));
         final ArrowTypeNode arrowTypeNode = new ArrowTypeNode(parametersType, node.retType);
         node.setType(arrowTypeNode);
         STentry entry = new STentry(nestingLevel, arrowTypeNode, decOffset--);
         //inserimento di ID nella symtable
-        if (currentSymbleTable.put(node.id, entry) != null) {
+        if (currentSymbolTable.put(node.id, entry) != null) {
             System.out.println("Fun id " + node.id + " at line " + node.getLine() + " already declared");
             stErrors++;
         }
         //creare una nuova hashmap per la symTable
         nestingLevel++;
-        Map<String, STentry> newSymbleTableEntry = new HashMap<>();
-        symbleTable.add(newSymbleTableEntry);
+        Map<String, STentry> newSymbolTable = new HashMap<>();
+        symbolTable.add(newSymbolTable);
         int prevNLDecOffset = decOffset; // stores counter for offset of declarations at previous nesting level
         decOffset = -2;
 
         int parOffset = 1;
         for (ParNode par : node.parameters) {
             final STentry parEntry = new STentry(nestingLevel, par.getType(), parOffset++);
-            if (newSymbleTableEntry.put(par.id, parEntry) != null) {
+            if (newSymbolTable.put(par.id, parEntry) != null) {
                 System.out.println("Par id " + par.id + " at line " + node.getLine() + " already declared");
                 stErrors++;
             }
@@ -113,7 +113,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void, VoidException> {
         node.declarations.forEach(this::visit);
         visit(node.exp);
         //rimuovere la hashmap corrente poiche' esco dallo scope
-        symbleTable.remove(nestingLevel--);
+        symbolTable.remove(nestingLevel--);
         decOffset = prevNLDecOffset; // restores counter for offset of declarations at previous nesting level
         return null;
     }
@@ -129,10 +129,10 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void, VoidException> {
     public Void visitNode(VarNode node) {
         if (print) printNode(node);
         visit(node.exp);
-        Map<String, STentry> currentSymbleTable = symbleTable.get(nestingLevel);
+        Map<String, STentry> currentSymbolTable = symbolTable.get(nestingLevel);
         STentry entry = new STentry(nestingLevel, node.getType(), decOffset--);
         //inserimento di ID nella symtable
-        if (currentSymbleTable.put(node.id, entry) != null) {
+        if (currentSymbolTable.put(node.id, entry) != null) {
             System.out.println("Var id " + node.id + " at line " + node.getLine() + " already declared");
             stErrors++;
         }
