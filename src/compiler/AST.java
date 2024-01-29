@@ -462,4 +462,214 @@ public class AST {
         }
     }
 
+    // Object oriented extension
+
+    /**
+     * This is a Field declaration node.
+     * It contains the field name and the offset.
+     */
+    public static class FieldNode extends DecNode {
+        final String id;
+        int offset;
+
+        FieldNode(String id, TypeNode type) {
+            this.id = id;
+            this.type = type;
+        }
+
+        @Override
+        public <S, E extends Exception> S accept(BaseASTVisitor<S, E> visitor) throws E {
+            return visitor.visitNode(this);
+        }
+    }
+
+    /**
+     * This is a Method declaration node.
+     * It contains the method name, the return type, the list of parameters, the list of local declarations and the body expression.
+     * It also contains the offset and the label.
+     */
+    public static class MethodNode extends DecNode {
+        final String id;
+        final TypeNode retType;
+        final List<ParNode> parameters;
+        final List<DecNode> declarations;
+        final Node exp;
+        int offset;
+
+        String label;
+
+        MethodNode(String id, TypeNode retType, List<ParNode> parList, List<DecNode> decList, Node exp) {
+            this.id = id;
+            this.retType = retType;
+            this.parameters = Collections.unmodifiableList(parList);
+            this.declarations = Collections.unmodifiableList(decList);
+            this.exp = exp;
+        }
+
+        @Override
+        public <S, E extends Exception> S accept(BaseASTVisitor<S, E> visitor) throws E {
+            return null;
+        }
+    }
+
+    /**
+     * The node for the declaration of a class.
+     * It contains the id of the class, the id of the super class,
+     * the list of fields and the list of methods.
+     * It also contains the type of the class and the entry of the super class.
+     */
+    public static class ClassNode extends DecNode {
+        final String classId;
+        final Optional<String> superClassId;
+        final List<FieldNode> fields;
+        final List<MethodNode> methods;
+        STentry superEntry;
+
+        public ClassNode(final String classId, final Optional<String> superId, final List<FieldNode> fields, final List<MethodNode> methods) {
+            this.classId = classId;
+            this.superClassId = superId;
+            this.fields = Collections.unmodifiableList(fields);
+            this.methods = Collections.unmodifiableList(methods);
+        }
+
+        void setType(final ClassTypeNode type) {
+            this.type = type;
+        }
+
+        @Override
+        public <S, E extends Exception> S accept(BaseASTVisitor<S, E> visitor) throws E {
+            return visitor.visitNode(this);
+        }
+    }
+
+    /**
+     * The node for the null value.
+     */
+    public static class EmptyNode extends Node {
+
+        @Override
+        public <S, E extends Exception> S accept(BaseASTVisitor<S, E> visitor) throws E {
+            return visitor.visitNode(this);
+        }
+
+    }
+
+    /**
+     * The node for the method call.
+     * It contains the id of the object, the id of the method,
+     * the list of arguments and the entry in the symbol table.
+     * It also contains the entry of the method in the symbol table.
+     * It also contains the nesting level.
+     */
+    public static class ClassCallNode extends Node {
+
+        final String objectId;
+        final String methodId;
+        final List<Node> args;
+
+        int nestingLevel = 0;
+        STentry entry;
+        STentry methodEntry;
+
+        public ClassCallNode(final String objectId, final String methodId, final List<Node> args) {
+            this.objectId = objectId;
+            this.methodId = methodId;
+            this.args = Collections.unmodifiableList(args);
+        }
+
+        @Override
+        public <S, E extends Exception> S accept(BaseASTVisitor<S, E> visitor) throws E {
+            return visitor.visitNode(this);
+        }
+    }
+
+    /**
+     * The node for the new expression.
+     * It contains the id of the class and the list of arguments.
+     * It also contains the entry in the symbol table.
+     */
+    public static class NewNode extends Node {
+        final String classId;
+        final List<Node> arguments;
+        STentry entry;
+
+        public NewNode(final String classId, final List<Node> args) {
+            this.classId = classId;
+            this.arguments = Collections.unmodifiableList(args);
+        }
+
+        @Override
+        public <S, E extends Exception> S accept(BaseASTVisitor<S, E> visitor) throws E {
+            return visitor.visitNode(this);
+        }
+    }
+
+    /**
+     * This is the node for the class type.
+     * It contains the list of fields and the list of methods.
+     */
+    public static class ClassTypeNode extends TypeNode {
+        final List<TypeNode> fields;
+        final List<ArrowTypeNode> methods;
+
+        public ClassTypeNode(final List<TypeNode> fields, final List<ArrowTypeNode> methods) {
+            this.fields = Collections.unmodifiableList(fields);
+            this.methods = Collections.unmodifiableList(methods);
+        }
+
+        @Override
+        public <S, E extends Exception> S accept(BaseASTVisitor<S, E> visitor) throws E {
+            return visitor.visitNode(this);
+        }
+
+    }
+
+    /**
+     * This is the node for the method type.
+     * It contains the arrow type of the method.
+     */
+    public static class MethodTypeNode extends TypeNode {
+
+        final ArrowTypeNode arrowTypeNode;
+
+        public MethodTypeNode(final ArrowTypeNode functionalType) {
+            this.arrowTypeNode = functionalType;
+        }
+
+        @Override
+        public <S, E extends Exception> S accept(BaseASTVisitor<S, E> visitor) throws E {
+            return visitor.visitNode(this);
+        }
+    }
+
+    /**
+     * The node for object reference type.
+     * It contains the id of the class.
+     */
+    public static class RefTypeNode extends TypeNode {
+
+        final String refObjectId;
+
+        public RefTypeNode(final String classId) {
+            this.refObjectId = classId;
+        }
+
+
+        @Override
+        public <S, E extends Exception> S accept(BaseASTVisitor<S, E> visitor) throws E {
+            return visitor.visitNode(this);
+        }
+    }
+
+    /**
+     * This is the node for the empty type.
+     */
+    public static class EmptyTypeNode extends TypeNode {
+
+
+        @Override
+        public <S, E extends Exception> S accept(BaseASTVisitor<S, E> visitor) throws E {
+            return visitor.visitNode(this);
+        }
+    }
 }
