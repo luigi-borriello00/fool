@@ -1,4 +1,4 @@
-// Generated from /Users/giggino/Desktop/compiler/fool/src/compiler/FOOL.g4 by ANTLR 4.13.1
+// Generated from C:/Users/tbrin/Desktop/prog_LCMC/fool/src/compiler/FOOL.g4 by ANTLR 4.13.1
 package compiler;
 
 import org.antlr.v4.runtime.ParserRuleContext;
