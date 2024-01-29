@@ -617,6 +617,14 @@ public class AST {
             this.methods = Collections.unmodifiableList(methods);
         }
 
+        public ClassTypeNode(final ClassTypeNode parent) {
+            this(parent.fields, parent.methods);
+        }
+
+        public ClassTypeNode() {
+            this(new ArrayList<>(), new ArrayList<>());
+        }
+
         @Override
         public <S, E extends Exception> S accept(BaseASTVisitor<S, E> visitor) throws E {
             return visitor.visitNode(this);
@@ -665,7 +673,6 @@ public class AST {
      * This is the node for the empty type.
      */
     public static class EmptyTypeNode extends TypeNode {
-
 
         @Override
         public <S, E extends Exception> S accept(BaseASTVisitor<S, E> visitor) throws E {
