@@ -426,7 +426,6 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
         if (context.ID().size() == 0) return null; // Incomplete ST
         final String methodId = context.ID(0).getText();
         final TypeNode returnType = (TypeNode) visit(context.type(0));
-
         final int idPadding = 1;
         final List<ParNode> parameters = new ArrayList<>();
         for (int i = idPadding; i < context.ID().size(); i++) {
@@ -504,12 +503,6 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
         newNode.setLine(context.ID().getSymbol().getLine());
         return newNode;
     }
-
-    /* *******************
-     *********************
-     * OOP Type Nodes
-     *********************
-     ******************* */
 
     /**
      * Visit the IdType context.

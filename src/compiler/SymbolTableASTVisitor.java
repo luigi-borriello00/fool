@@ -426,6 +426,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void, VoidException> {
                 // Get the super class entry
                 final STentry superSTEntry = symbolTable.get(0).get(superId);
                 final ClassTypeNode superTypeNode = (ClassTypeNode) superSTEntry.type;
+                // Set the super class fields and methods
                 classTypeNode = new ClassTypeNode(superTypeNode);
                 node.superEntry = superSTEntry;
             } else {
@@ -555,15 +556,15 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void, VoidException> {
     @Override
     public Void visitNode(final MethodNode node) {
         if (print) printNode(node);
-        final Map<String, STentry> currentTable = symbolTable.get(nestingLevel);
+        final Map<String, STentry> currentSymbolTable = symbolTable.get(nestingLevel);
         final List<TypeNode> parameters = node.parameters.stream()
                 .map(ParNode::getType)
                 .toList();
-        final boolean isOverriding = currentTable.containsKey(node.id);
+        final boolean isOverriding = currentSymbolTable.containsKey(node.id);
         final TypeNode methodType = new MethodTypeNode(new ArrowTypeNode(parameters, node.retType));
         STentry entry = new STentry(nestingLevel, methodType, decOffset++);
         if (isOverriding) {
-            final var overriddenMethodEntry = currentTable.get(node.id);
+            final var overriddenMethodEntry = currentSymbolTable.get(node.id);
             final boolean isOverridingAMethod = overriddenMethodEntry != null && overriddenMethodEntry.type instanceof MethodTypeNode;
             if (isOverridingAMethod) {
                 entry = new STentry(nestingLevel, methodType, overriddenMethodEntry.offset);
@@ -575,7 +576,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void, VoidException> {
         }
 
         node.offset = entry.offset;
-        currentTable.put(node.id, entry);
+        currentSymbolTable.put(node.id, entry);
 
         // Create a new table for the method.
         nestingLevel++;
@@ -595,6 +596,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void, VoidException> {
                 stErrors++;
             }
         }
+        // Now we are inside the method scope, so we can visit the declarations and the expression.
         node.declarations.forEach(this::visit);
         visit(node.exp);
 

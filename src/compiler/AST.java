@@ -546,7 +546,6 @@ public class AST {
      * The node for the null value.
      */
     public static class EmptyNode extends Node {
-
         @Override
         public <S, E extends Exception> S accept(BaseASTVisitor<S, E> visitor) throws E {
             return visitor.visitNode(this);
@@ -562,11 +561,9 @@ public class AST {
      * It also contains the nesting level.
      */
     public static class ClassCallNode extends Node {
-
         final String objectId;
         final String methodId;
         final List<Node> args;
-
         int nestingLevel = 0;
         STentry entry;
         STentry methodEntry;

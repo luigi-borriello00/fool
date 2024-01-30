@@ -454,5 +454,232 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode, TypeExceptio
         return new IntTypeNode();
     }
 
+    // OBJECT ORIENTED EXTENSION
 
+    /**
+     * Visit a ClassNode node and check its type.
+     * If the class has a super class, add it as super type in TypeRels Map.
+     * Visit all methods in the class.
+     * <p>
+     * If the class has a super class, visit all fields and methods
+     * in the class and check that their types are subtypes of the
+     * types of the fields and methods in the super class.
+     * Return null.
+     *
+     * @param node the ClassNode node to visit
+     * @return null
+     * @throws TypeException if the class has a super class and the super class is not defined
+     */
+    @Override
+    public TypeNode visitNode(final ClassNode node) throws TypeException {
+        if (print) printNode(node, node.classId);
+        final boolean isSubClass = node.superClassId.isPresent();
+        final String superId = isSubClass ? node.superClassId.get() : null;
+
+        // if class has a super class, add it as super type in TypeRels Map
+        if (isSubClass) {
+            superType.put(node.classId, superId);
+        }
+
+        // visit all methods
+        for (final MethodNode method : node.methods) {
+            try {
+                visit(method);
+            } catch (TypeException e) {
+                System.out.println("Type checking error in a class declaration: " + e.text);
+            }
+        }
+
+        if (!isSubClass || node.superEntry == null) {
+            return null;
+        }
+
+        // get the types of the class and the super class
+        final ClassTypeNode classType = (ClassTypeNode) node.getType();
+        final ClassTypeNode parentClassType = (ClassTypeNode) node.superEntry.type;
+
+        // visit all fields in the class and check that their types are subtypes of the types of the fields in the super class
+        for (final FieldNode field : node.fields) {
+            int position = -field.offset - 1;
+            final boolean isOverriding = position < parentClassType.fields.size();
+            if (isOverriding && !isSubtype(classType.fields.get(position), parentClassType.fields.get(position))) {
+                throw new TypeException("Wrong type for field " + field.id, field.getLine());
+            }
+        }
+
+        // visit all methods in the class and check that their types are subtypes of the types of the methods in the super class
+        for (final MethodNode method : node.methods) {
+            int position = method.offset;
+            final boolean isOverriding = position < parentClassType.fields.size();
+            if (isOverriding && !isSubtype(classType.methods.get(position), parentClassType.methods.get(position))) {
+                throw new TypeException("Wrong type for method " + method.id, method.getLine());
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Visit a MethodNode node and check its type.
+     * Visit all declarations.
+     * Visit the expression and check that its type is a subtype of the return type.
+     *
+     * @param node the MethodNode node to visit
+     * @return null
+     * @throws TypeException if the type of the expression is not a subtype of the return type
+     */
+    @Override
+    public TypeNode visitNode(final MethodNode node) throws TypeException {
+        if (print) printNode(node, node.id);
+        for (final DecNode declaration : node.declarations) {
+            try {
+                visit(declaration);
+            } catch (TypeException e) {
+                System.out.println("Type checking error in a method declaration: " + e.text);
+            }
+        }
+        // visit expression and check if it is a subtype of the return type
+        if (!isSubtype(visit(node.exp), ckvisit(node.retType))) {
+            throw new TypeException("Wrong return type for method " + node.id, node.getLine());
+        }
+        return null;
+    }
+
+    /**
+     * Visit an EmptyNode node and return an EmptyTypeNode.
+     *
+     * @param node the EmptyNode node to visit.
+     * @return an EmptyTypeNode.
+     */
+    @Override
+    public TypeNode visitNode(final EmptyNode node) {
+        if (print) printNode(node);
+        return new EmptyTypeNode();
+    }
+
+    /**
+     * Visit a ClassCallNode node and check its type.
+     * Visit the method entry and check that its type is a method type.
+     * Check that the number of parameters is correct and that their types are correct.
+     * Return the type of the method.
+     *
+     * @param node the ClassCallNode node to visit
+     * @return the type of the method
+     * @throws TypeException if the type of the method is not a method type
+     *                       or if the number of parameters is not correct
+     *                       or if the types of the parameters are not correct
+     */
+    @Override
+    public TypeNode visitNode(final ClassCallNode node) throws TypeException {
+        if (print) printNode(node, node.objectId);
+        TypeNode classCallType = visit(node.methodEntry);
+        // visit method, if it is a method type, get the functional type
+        if (classCallType instanceof MethodTypeNode methodTypeNode) {
+            classCallType = methodTypeNode.arrowTypeNode;
+        }
+        // if it is not an arrow type, throw an exception
+        if (!(classCallType instanceof ArrowTypeNode arrowTypeNode)) {
+            throw new TypeException("Invocation of a non-function " + node.methodId, node.getLine());
+        }
+        // check if the number of parameters is correct
+        if (arrowTypeNode.parameters.size() != node.args.size()) {
+            throw new TypeException("Wrong number of parameters in the invocation of method " + node.methodId, node.getLine());
+        }
+        // check if the types of the parameters are correct
+        for (int i = 0; i < node.args.size(); i++) {
+            if (!(isSubtype(visit(node.args.get(i)), arrowTypeNode.parameters.get(i)))) {
+                throw new TypeException("Wrong type for " + (i + 1) + "-th parameter in the invocation of method " + node.methodId, node.getLine());
+            }
+        }
+        return arrowTypeNode.returnType;
+    }
+
+    /**
+     * Visit a NewNode node and check its type.
+     * Visit the class entry and check that it is a class type.
+     * Check that the number of parameters is correct and that their types are correct.
+     *
+     * @param node the NewNode node to visit
+     * @return the class type
+     * @throws TypeException if the class entry is not a class type or if the number of parameters is wrong or if their types are wrong
+     */
+    @Override
+    public TypeNode visitNode(final NewNode node) throws TypeException {
+        if (print) printNode(node, node.classId);
+        final TypeNode typeNode = visit(node.entry);
+        // if the class entry is not a class type, throw an exception
+        if (!(typeNode instanceof ClassTypeNode classTypeNode)) {
+            throw new TypeException("Invocation of a non-constructor " + node.classId, node.getLine());
+        }
+        // check if the number of parameters is correct
+        if (classTypeNode.fields.size() != node.arguments.size()) {
+            throw new TypeException("Wrong number of parameters in the invocation of constructor " + node.classId, node.getLine());
+        }
+        // check if the types of the parameters are correct
+        for (int i = 0; i < node.arguments.size(); i++) {
+            if (!(isSubtype(visit(node.arguments.get(i)), classTypeNode.fields.get(i)))) {
+                throw new TypeException("Wrong type for " + (i + 1) + "-th parameter in the invocation of constructor " + node.classId, node.getLine());
+            }
+        }
+        return new RefTypeNode(node.classId);
+    }
+
+    /**
+     * Visit a ClassTypeNode node.
+     * Visit all fields and methods.
+     * Return null.
+     *
+     * @param node the ClassTypeNode node to visit.
+     * @return null.
+     * @throws TypeException if there is a type error.
+     */
+    @Override
+    public TypeNode visitNode(final ClassTypeNode node) throws TypeException {
+        if (print) printNode(node);
+        // Visit all fields and methods
+        for (final TypeNode field : node.fields) visit(field);
+        for (final ArrowTypeNode method : node.methods) visit(method);
+        return null;
+    }
+
+    /**
+     * Visit a MethodTypeNode node.
+     * Visit all parameters and the return type.
+     * Return null.
+     *
+     * @param node the MethodTypeNode node to visit.
+     * @return null.
+     * @throws TypeException if there is a type error.
+     */
+    @Override
+    public TypeNode visitNode(final MethodTypeNode node) throws TypeException {
+        if (print) printNode(node);
+        // Visit all parameters and the return type
+        for (final TypeNode parameter : node.arrowTypeNode.parameters) visit(parameter);
+        visit(node.arrowTypeNode.returnType, "->");
+        return null;
+    }
+
+    /**
+     * Visit a RefTypeNode node.
+     *
+     * @param node the RefTypeNode node to visit.
+     * @return null.
+     */
+    @Override
+    public TypeNode visitNode(final RefTypeNode node) {
+        if (print) printNode(node);
+        return null;
+    }
+
+    /**
+     * Visit an EmptyTypeNode node.
+     *
+     * @param node the EmptyTypeNode node to visit.
+     * @return null.
+     */
+    @Override
+    public TypeNode visitNode(final EmptyTypeNode node) {
+        if (print) printNode(node);
+        return null;
+    }
 }
