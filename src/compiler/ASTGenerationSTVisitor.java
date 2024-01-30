@@ -1,6 +1,7 @@
 package compiler;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -371,6 +372,157 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
         List<Node> arglist = new ArrayList<>();
         for (ExpContext arg : context.exp()) arglist.add(visit(arg));
         Node node = new CallNode(context.ID().getText(), arglist);
+        node.setLine(context.ID().getSymbol().getLine());
+        return node;
+    }
+
+    // OBJECT ORIENTED EXTENSION
+
+    /**
+     * Visit the Cldec context.
+     * It returns the ClassNode built with the class id, the super id, the fields and the methods.
+     *
+     * @param context the parse tree
+     * @return the ClassNode built with the class id, the super id, the fields and the methods
+     */
+    @Override
+    public Node visitCldec(final CldecContext context) {
+        if (print) printVarAndProdName(context);
+        if (context.ID().size() == 0) return null; // Incomplete ST
+        final String classId = context.ID(0).getText();
+        // Get the super id if present
+        final Optional<String> superId = context.EXTENDS() == null ?
+                Optional.empty() : Optional.of(context.ID(1).getText());
+        final int idPadding = superId.isPresent() ? 2 : 1;
+
+        // Get the fields
+        final List<FieldNode> fields = new ArrayList<>();
+        for (int i = idPadding; i < context.ID().size(); i++) {
+            final String id = context.ID(i).getText();
+            final TypeNode type = (TypeNode) visit(context.type(i - idPadding));
+            final FieldNode f = new FieldNode(id, type);
+            f.setLine(context.ID(i).getSymbol().getLine());
+            fields.add(f);
+        }
+        // Get the methods
+        final List<MethodNode> methods = context.methdec().stream()
+                .map(x -> (MethodNode) visit(x))
+                .collect(Collectors.toList());
+        final ClassNode classNode = new ClassNode(classId, superId, fields, methods);
+        classNode.setLine(context.ID(0).getSymbol().getLine());
+        return classNode;
+    }
+
+    /**
+     * Visit the Methdec context.
+     * It returns the MethodNode built with the method id, the return type, the parameters, the declarations and the body.
+     *
+     * @param context the parse tree
+     * @return the MethodNode built with the method id, the return type, the parameters, the declarations and the body
+     */
+    @Override
+    public Node visitMethdec(final MethdecContext context) {
+        if (print) printVarAndProdName(context);
+        if (context.ID().size() == 0) return null; // Incomplete ST
+        final String methodId = context.ID(0).getText();
+        final TypeNode returnType = (TypeNode) visit(context.type(0));
+
+        final int idPadding = 1;
+        final List<ParNode> parameters = new ArrayList<>();
+        for (int i = idPadding; i < context.ID().size(); i++) {
+            final String id = context.ID(i).getText();
+            final TypeNode type = (TypeNode) visit(context.type(i));
+            final ParNode p = new ParNode(id, type);
+            p.setLine(context.ID(i).getSymbol().getLine());
+            parameters.add(p);
+        }
+
+        // Get the declarations
+        final List<DecNode> declarations = context.dec().stream()
+                .map(x -> (DecNode) visit(x))
+                .collect(Collectors.toList());
+        final Node exp = visit(context.exp());
+        final MethodNode methodNode = new MethodNode(methodId, returnType, parameters, declarations, exp);
+        methodNode.setLine(context.ID(0).getSymbol().getLine());
+        return methodNode;
+    }
+
+    /**
+     * Visit the Null context.
+     * It returns the EmptyNode.
+     *
+     * @param context the parse tree
+     * @return the EmptyNode
+     */
+    @Override
+    public Node visitNull(final NullContext context) {
+        if (print) printVarAndProdName(context);
+        return new EmptyNode();
+    }
+
+    /**
+     * Visit the DotCall context.
+     * It returns the ClassCallNode built with the object id, the method id and the arguments.
+     *
+     * @param context the parse tree
+     * @return the ClassCallNode built with the object id, the method id and the arguments
+     */
+    @Override
+    public Node visitDotCall(final DotCallContext context) {
+        if (print) printVarAndProdName(context);
+        if (context.ID().size() != 2) return null; // Incomplete ST
+        final String objectId = context.ID(0).getText();
+        final String methodId = context.ID(1).getText();
+        // Visit the arguments
+        final List<Node> arguments = context.exp().stream()
+                .map(this::visit)
+                .collect(Collectors.toList());
+
+        // Build the ClassCallNode
+        final ClassCallNode classCallNode = new ClassCallNode(objectId, methodId, arguments);
+        classCallNode.setLine(context.ID(0).getSymbol().getLine());
+        return classCallNode;
+    }
+
+    /**
+     * Visit the New context.
+     * It returns the NewNode built with the class id and the arguments.
+     *
+     * @param context the parse tree
+     * @return the NewNode built with the class id and the arguments
+     */
+    @Override
+    public Node visitNew(final NewContext context) {
+        if (print) printVarAndProdName(context);
+        if (context.ID() == null) return null; // Incomplete ST
+        final String classId = context.ID().getText();
+        final List<Node> arguments = context.exp().stream()
+                .map(this::visit)
+                .toList();
+        // Build the NewNode
+        final NewNode newNode = new NewNode(classId, arguments);
+        newNode.setLine(context.ID().getSymbol().getLine());
+        return newNode;
+    }
+
+    /* *******************
+     *********************
+     * OOP Type Nodes
+     *********************
+     ******************* */
+
+    /**
+     * Visit the IdType context.
+     * It returns the RefTypeNode built with the id.
+     *
+     * @param context the parse tree
+     * @return the RefTypeNode built
+     */
+    @Override
+    public Node visitIdType(final IdTypeContext context) {
+        if (print) printVarAndProdName(context);
+        final String id = context.ID().getText();
+        final RefTypeNode node = new RefTypeNode(id);
         node.setLine(context.ID().getSymbol().getLine());
         return node;
     }

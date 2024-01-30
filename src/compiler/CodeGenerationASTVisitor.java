@@ -205,6 +205,8 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
         return PUSH + node.val;
     }
 
+    // OPERATOR EXTENSIONS
+
     @Override
     public String visitNode(GreaterEqualNode node) {
         if (print) printNode(node);
