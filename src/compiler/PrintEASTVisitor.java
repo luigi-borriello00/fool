@@ -140,7 +140,7 @@ public class PrintEASTVisitor extends BaseEASTVisitor<Void, VoidException> {
 
     @Override
     public Void visitSTentry(STentry entry) {
-        printSTentry("nestlev " + entry.nestingLevel);
+        printSTentry("nestlev " + entry.nl);
         printSTentry("type");
         visit(entry.type);
         printSTentry("offset " + entry.offset);

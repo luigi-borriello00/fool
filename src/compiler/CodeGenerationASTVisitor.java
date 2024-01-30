@@ -165,7 +165,7 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
         if (print) printNode(node, node.id);
         String argCode = null, getAR = null;
         for (int i = node.arguments.size() - 1; i >= 0; i--) argCode = nlJoin(argCode, visit(node.arguments.get(i)));
-        for (int i = 0; i < node.nestingLevel - node.entry.nestingLevel; i++) getAR = nlJoin(getAR, LOAD_W);
+        for (int i = 0; i < node.nestingLevel - node.entry.nl; i++) getAR = nlJoin(getAR, LOAD_W);
         return nlJoin(
                 LOAD_FP, // load Control Link (pointer to frame of function "id" caller)
                 argCode, // generate code for argument expressions in reversed order
@@ -184,7 +184,7 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
     public String visitNode(IdNode node) {
         if (print) printNode(node, node.id);
         String getAR = null;
-        for (int i = 0; i < node.nl - node.entry.nestingLevel; i++) getAR = nlJoin(getAR, LOAD_W);
+        for (int i = 0; i < node.nl - node.entry.nl; i++) getAR = nlJoin(getAR, LOAD_W);
         return nlJoin(
                 LOAD_FP, getAR, // retrieve address of frame containing "id" declaration
                 // by following the static chain (of Access Links)

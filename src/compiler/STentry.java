@@ -3,14 +3,14 @@ package compiler;
 import compiler.lib.*;
 
 public class STentry implements Visitable {
-    final int nestingLevel;
+    final int nl;
     final TypeNode type;
     final int offset;
 
-    public STentry(int nestingLevel, TypeNode typeNode, int offset) {
-        this.nestingLevel = nestingLevel;
-        this.type = typeNode;
-        this.offset = offset;
+    public STentry(int n, TypeNode t, int o) {
+        this.nl = n;
+        this.type = t;
+        this.offset = o;
     }
 
     @Override
