@@ -581,10 +581,10 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void, VoidException> {
                 stErrors++;
             }
         }
-        System.out.println("Adding method " + node.id + " to the virtual table");
+
         node.offset = methodEntry.offset;
         currentSymbolTable.put(node.id, methodEntry);
-        System.out.println("current symbol table: " + symbolTable);
+
         // Create a new table for the method.
         nestingLevel++;
         final Map<String, STentry> methodTable = new HashMap<>();
