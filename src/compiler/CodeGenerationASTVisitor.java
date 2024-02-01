@@ -3,6 +3,10 @@ package compiler;
 import compiler.AST.*;
 import compiler.lib.*;
 import compiler.exc.*;
+import svm.ExecuteVM;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static compiler.lib.FOOLlib.*;
 
@@ -11,6 +15,7 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
     // Stack Machine Code Instructions
     public static final String COPY_FP = "cfp";
     public static final String LOAD_RA = "lra";
+    public static final String STORE_TM = "stm";
     public static final String SET_TM = "stm";
     public static final String PUSH = "push ";
     public static final String HALT = "halt";
@@ -29,6 +34,21 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
     public static final String SUB = "sub";
     public static final String BRANCH_LESS_EQ = "bleq ";
     public static final String DIV = "div";
+    public static final String LOAD_HEAP_POINTER = "lhp";
+    public static final String STORE_WORD = "sw";
+    public static final String STORE_HEAP_POINTER = "shp";
+    public static final String STORE_RA = "sra";
+    public static final String STORE_FP = "sfp";
+    public static final String JUMP_TO_SUBROUTINE = "js";
+    public static final String LOAD_WORD = "lw";
+
+
+    /**
+     * The dispatch tables of the classes.
+     * <p>
+     * Each dispatch table is a list of labels, one for each method of the class.
+     */
+    private final List<List<String>> dispatchTables = new ArrayList<>();
 
     CodeGenerationASTVisitor() {
     }
@@ -318,5 +338,248 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
                 visit(node.right),          // generate code for right expression
                 DIV                   // divide left value by right value
         );
+    }
+
+    /**
+     * Generate code for the ClassNode node.
+     *
+     * @param node the ClassNode node
+     * @return the code generated for the ClassNode node
+     */
+    @Override
+    public String visitNode(final ClassNode node) {
+        if (print) printNode(node);
+
+        final List<String> dispatchTable = new ArrayList<>();
+        dispatchTables.add(dispatchTable);
+
+        final boolean isSubclass = node.superEntry != null;
+
+        if (isSubclass) {
+            final List<String> superDispatchTable = dispatchTables.get(-node.superEntry.offset - 2);
+            dispatchTable.addAll(superDispatchTable);
+        }
+        // Add a label for each method of the class
+        for (final MethodNode methodEntry : node.methods) {
+            visit(methodEntry);
+
+            final boolean isOverriding = methodEntry.offset < dispatchTable.size();
+            // Update the dispatch table
+            if (isOverriding) {
+                dispatchTable.set(methodEntry.offset, methodEntry.label);
+            } else {
+                dispatchTable.add(methodEntry.label);
+            }
+        }
+
+        String dispatchTableHeapCode = "";
+        for (final String label : dispatchTable) {
+            // Store method label in heap, increment heap pointer, store heap pointer
+            dispatchTableHeapCode = nlJoin(
+                    dispatchTableHeapCode,
+                    // Store method label in heap
+                    PUSH + label,       // push method label
+                    LOAD_HEAP_POINTER,  // push heap pointer
+                    STORE_WORD,         // store method label in heap
+                    // Increment heap pointer
+                    LOAD_HEAP_POINTER,  // push heap pointer
+                    PUSH + 1,           // push 1
+                    ADD,                // heap pointer + 1
+                    STORE_HEAP_POINTER            // store heap pointer
+            );
+        }
+
+        return nlJoin(
+                LOAD_HEAP_POINTER,      // push heap pointer, the address of the dispatch table
+                dispatchTableHeapCode   // generated code for creating the dispatch table in the heap
+        );
+
+    }
+
+    /**
+     * Generate code for the EmptyNode node.
+     *
+     * @param node the EmptyNode node
+     * @return the code generated for the EmptyNode node
+     */
+    @Override
+    public String visitNode(final EmptyNode node) {
+        if (print) printNode(node);
+        return PUSH + "-1";
+    }
+
+    /**
+     * Generate code for the MethodNode node.
+     *
+     * @param node the MethodNode node
+     * @return the code generated for the MethodNode node
+     */
+    @Override
+    public String visitNode(final MethodNode node) {
+        if (print) printNode(node);
+        String declarationsCode = "";
+        for (final DecNode declaration : node.declarations) {
+            declarationsCode = nlJoin(
+                    declarationsCode,
+                    visit(declaration)
+            );
+        }
+        String popDeclarationsCode = "";
+        for (final DecNode declaration : node.declarations) {
+            popDeclarationsCode = nlJoin(
+                    popDeclarationsCode,
+                    POP
+            );
+        }
+        String popParametersCode = "";
+        for (final ParNode parameter : node.parameters) {
+            popParametersCode = nlJoin(
+                    popParametersCode,
+                    POP
+            );
+        }
+        final String methodLabel = freshFunLabel();
+        node.label = methodLabel; // set the label of the method
+        // Generate code for the method body
+        putCode(
+                nlJoin(
+                        methodLabel + ":",   // method label
+                        // Set up the stack frame with FP, RA, and declarations
+                        COPY_FP,                    // copy $sp to $fp, the new frame pointer
+                        LOAD_RA,                    // push return address
+                        declarationsCode,           // generate code for declarations
+                        // Generate code for the body and store the result in $tm
+                        visit(node.exp),            // generate code for the expression
+                        STORE_TM,                   // set $tm to popped value (function result)
+                        // Frame cleanup
+                        popDeclarationsCode,        // pop declarations
+                        STORE_RA,
+                        // pop return address to $ra (for return)
+                        POP,                        // pop $fp
+                        popParametersCode,          // pop parameters
+                        STORE_FP,                   // pop $fp (restore old frame pointer)
+                        // Return
+                        LOAD_TM,                    // push function result
+                        LOAD_RA,                    // push return address
+                        JS                  // jump to return address
+                )
+        );
+
+        return null;
+    }
+
+    /**
+     * Generate code for the ClassCallNode node.
+     *
+     * @param node the ClassCallNode node
+     * @return the code generated for the ClassCallNode node
+     */
+    @Override
+    public String visitNode(final ClassCallNode node) {
+        if (print) printNode(node);
+
+        String argumentsCode = "";
+        for (int i = node.args.size() - 1; i >= 0; i--) {
+            argumentsCode = nlJoin(
+                    argumentsCode,
+                    visit(node.args.get(i))
+            );
+        }
+
+        String getARCode = "";
+        for (int i = 0; i < node.nestingLevel - node.entry.nl; i++) {
+            getARCode = nlJoin(
+                    getARCode,
+                    LOAD_WORD
+            );
+        }
+
+        return nlJoin(
+
+                // Set up the stack frame
+                LOAD_FP,     // push $fp on the stack
+                argumentsCode,      // generate arguments
+
+                // Get the address of the object
+                LOAD_FP, getARCode,         // get AR
+                PUSH + node.entry.offset,   // push class offset on the stack
+                ADD,                        // add class offset to $ar
+                LOAD_WORD,                  // load object address
+
+
+                // Duplicate class address
+                STORE_TM,     // set $tm to popped value (class address)
+                LOAD_TM,      // push class address on the stack
+                LOAD_TM,      // duplicate class address
+
+                // Get the address of the method
+                LOAD_WORD,    // load dispatch table address
+                PUSH + node.methodEntry.offset, // push method offset on the stack
+                ADD,          // add method offset to dispatch table address
+                LOAD_WORD,    // load method address
+
+                // Call the method
+                JS
+        );
+
+    }
+
+    /**
+     * Generate code for the NewNode node.
+     *
+     * @param node the NewNode node
+     * @return the code generated for the NewNode node
+     */
+    @Override
+    public String visitNode(final NewNode node) {
+        if (print) printNode(node);
+
+        String argumentsCode = "";
+        for (final Node argument : node.args) {
+            argumentsCode = nlJoin(
+                    argumentsCode,
+                    visit(argument)
+            );
+        }
+
+        String moveArgumentsOnHeapCode = "";
+        for (final Node argument : node.args) {
+            moveArgumentsOnHeapCode = nlJoin(
+                    moveArgumentsOnHeapCode,
+
+                    // Store argument on the heap
+                    LOAD_HEAP_POINTER,    // push $hp on the stack
+                    STORE_WORD,           // store argument on the heap
+
+                    // Update $hp = $hp + 1
+                    LOAD_HEAP_POINTER,    // push $hp on the stack
+                    PUSH + 1,             // push 1 on the stack
+                    ADD,                  // add 1 to $hp
+                    STORE_HP              // store $hp
+            );
+        }
+
+        return nlJoin(
+
+                // Set up arguments on the stack and move them on the heap
+                argumentsCode,      // generate arguments
+                moveArgumentsOnHeapCode,  // move arguments on the heap
+
+                // Load the address of the dispatch table in the heap
+                PUSH + (ExecuteVM.MEMSIZE + node.entry.offset), // push class address on the stack
+                LOAD_WORD,          // load dispatch table address
+                LOAD_HEAP_POINTER,  // push $hp on the stack
+                STORE_WORD,         // store dispatch table address on the heap
+
+                // Put the result on the stack (object address)
+                LOAD_HEAP_POINTER,  // push $hp on the stack (object address)
+
+                // Update $hp = $hp + 1
+                LOAD_HEAP_POINTER,  // push $hp on the stack
+                PUSH + 1,           // push 1 on the stack
+                ADD,                // add 1 to $hp
+                STORE_HP            // store $hp
+        );
+
     }
 }

@@ -137,7 +137,6 @@ public class TypeRels {
                 return false;
             }
         }
-
         return true;
     }
 
@@ -154,7 +153,7 @@ public class TypeRels {
                 || !(second instanceof RefTypeNode secondRefTypeNode)) {
             return false;
         }
-
+        // Check if the second type is a super type of the first type
         return superTypesList(firstRefTypeNode.refClassId)
                 .stream()
                 .anyMatch(secondRefTypeNode.refClassId::equals);

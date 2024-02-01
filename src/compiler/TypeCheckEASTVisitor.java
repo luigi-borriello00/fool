@@ -124,9 +124,10 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode, TypeExceptio
      * If not, throws an exception.
      * Then visit the then branch and the else branch and check that their types are compatible.
      * If not, throws an exception.
+     * Return the lowest common ancestor of the two types.
      *
      * @param node the IfNode node to visit
-     * @return null
+     * @return the lowest common ancestor of the two types
      * @throws TypeException if the condition is not correct or the branches are not compatible
      */
     @Override
@@ -134,11 +135,13 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode, TypeExceptio
         if (print) printNode(node);
         if (!(isSubtype(visit(node.condition), new BoolTypeNode())))
             throw new TypeException("Non boolean condition in if", node.getLine());
-        TypeNode t = visit(node.thenBranch);
-        TypeNode e = visit(node.elseBranch);
-        if (isSubtype(t, e)) return e;
-        if (isSubtype(e, t)) return t;
-        throw new TypeException("Incompatible types in then-else branches", node.getLine());
+        TypeNode thenBranch = visit(node.thenBranch);
+        TypeNode elseBranch = visit(node.elseBranch);
+        final TypeNode returnType = lowestCommonAncestor(thenBranch, elseBranch);
+        if (returnType == null) {
+            throw new TypeException("Incompatible types in then-else branches", node.getLine());
+        }
+        return returnType;
     }
 
     /**
@@ -211,11 +214,15 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode, TypeExceptio
     public TypeNode visitNode(CallNode node) throws TypeException {
         if (print) printNode(node, node.id);
         TypeNode typeNode = visit(node.entry);
-        if (!(typeNode instanceof ArrowTypeNode))
+        if (typeNode instanceof MethodTypeNode methodTypeNode) {
+            typeNode = methodTypeNode.arrowTypeNode;
+        }
+        if (!(typeNode instanceof ArrowTypeNode arrowTypeNode)) {
             throw new TypeException("Invocation of a non-function " + node.id, node.getLine());
-        ArrowTypeNode arrowTypeNode = (ArrowTypeNode) typeNode;
-        if (!(arrowTypeNode.parameters.size() == node.arguments.size()))
+        }
+        if (!(arrowTypeNode.parameters.size() == node.arguments.size())) {
             throw new TypeException("Wrong number of parameters in the invocation of " + node.id, node.getLine());
+        }
         for (int i = 0; i < node.arguments.size(); i++)
             if (!(isSubtype(visit(node.arguments.get(i)), arrowTypeNode.parameters.get(i))))
                 throw new TypeException("Wrong type for " + (i + 1) + "-th parameter in the invocation of " + node.id, node.getLine());
@@ -235,7 +242,7 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode, TypeExceptio
     public TypeNode visitNode(IdNode node) throws TypeException {
         if (print) printNode(node, node.id);
         TypeNode t = visit(node.entry);
-        if (t instanceof ArrowTypeNode)
+        if (t instanceof ArrowTypeNode || t instanceof MethodTypeNode)
             throw new TypeException("Wrong usage of function identifier " + node.id, node.getLine());
         return t;
     }
@@ -571,13 +578,13 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode, TypeExceptio
     @Override
     public TypeNode visitNode(final ClassCallNode node) throws TypeException {
         if (print) printNode(node, node.objectId);
-        TypeNode classCallType = visit(node.methodEntry);
+        TypeNode methodType = visit(node.methodEntry);
         // visit method, if it is a method type, get the functional type
-        if (classCallType instanceof MethodTypeNode methodTypeNode) {
-            classCallType = methodTypeNode.arrowTypeNode;
+        if (methodType instanceof MethodTypeNode methodTypeNode) {
+            methodType = methodTypeNode.arrowTypeNode;
         }
         // if it is not an arrow type, throw an exception
-        if (!(classCallType instanceof ArrowTypeNode arrowTypeNode)) {
+        if (!(methodType instanceof ArrowTypeNode arrowTypeNode)) {
             throw new TypeException("Invocation of a non-function " + node.methodId, node.getLine());
         }
         // check if the number of parameters is correct
