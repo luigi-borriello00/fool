@@ -535,17 +535,17 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
         if (print) printNode(node);
 
         String argumentsCode = "";
-        for (final Node argument : node.args) {
+        for (final Node argument : node.arguments) {
             argumentsCode = nlJoin(
                     argumentsCode,
                     visit(argument)
             );
         }
 
-        String moveArgumentsOnHeapCode = "";
-        for (final Node argument : node.args) {
-            moveArgumentsOnHeapCode = nlJoin(
-                    moveArgumentsOnHeapCode,
+        String moveArgsToHeap = "";
+        for (final Node argument : node.arguments) {
+            moveArgsToHeap = nlJoin(
+                    moveArgsToHeap,
 
                     // Store argument on the heap
                     LOAD_HEAP_POINTER,    // push $hp on the stack
@@ -555,7 +555,7 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
                     LOAD_HEAP_POINTER,    // push $hp on the stack
                     PUSH + 1,             // push 1 on the stack
                     ADD,                  // add 1 to $hp
-                    STORE_HP              // store $hp
+                    "shp"             // store $hp
             );
         }
 
@@ -563,7 +563,7 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 
                 // Set up arguments on the stack and move them on the heap
                 argumentsCode,      // generate arguments
-                moveArgumentsOnHeapCode,  // move arguments on the heap
+                moveArgsToHeap,  // move arguments on the heap
 
                 // Load the address of the dispatch table in the heap
                 PUSH + (ExecuteVM.MEMSIZE + node.entry.offset), // push class address on the stack
@@ -578,7 +578,7 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
                 LOAD_HEAP_POINTER,  // push $hp on the stack
                 PUSH + 1,           // push 1 on the stack
                 ADD,                // add 1 to $hp
-                STORE_HP            // store $hp
+                "shp"            // store $hp
         );
 
     }
