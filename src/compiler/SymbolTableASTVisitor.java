@@ -448,9 +448,12 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void, VoidException> {
         final Map<String, STentry> virtualTable = new HashMap<>();
         if (isSubClass) {
             final Map<String, STentry> superClassVirtualTable = classTable.get(superId);
+            // we copy the superclass virtual table not the reference
             virtualTable.putAll(superClassVirtualTable);
         }
+        // Add the virtual table to the class table
         classTable.put(node.classId, virtualTable);
+        // Add the symbol table to the symbol table list
         symbolTable.add(virtualTable);
         // Setting the field offset
         nestingLevel++;
@@ -465,6 +468,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void, VoidException> {
          */
         final Set<String> visitedClassNames = new HashSet<>();
         for (final FieldNode field : node.fields) {
+            // check for duplicate fields
             if (visitedClassNames.contains(field.id)) {
                 System.out.println(
                         "Field with id " + field.id + " on line " + field.getLine() + " was already declared"
@@ -475,6 +479,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void, VoidException> {
             }
             visit(field);
 
+            // The field offset grows from the end of the list
             STentry fieldEntry = new STentry(nestingLevel, field.getType(), fieldOffset--);
             final boolean isFieldOverridden = isSubClass && virtualTable.containsKey(field.id);
             // Handle the override of a field
@@ -485,6 +490,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void, VoidException> {
                     System.out.println("Cannot override method " + field.id + " with a field");
                     stErrors++;
                 } else {
+                    // if the field is overridden, the offset is the same in the heap
                     fieldEntry = new STentry(nestingLevel, field.getType(), overriddenFieldEntry.offset);
                     classTypeNode.fields.set(-fieldEntry.offset - 1, fieldEntry.type);
                 }
@@ -556,18 +562,19 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void, VoidException> {
     @Override
     public Void visitNode(final MethodNode node) {
         if (print) printNode(node);
+        // obtain the current symbol table, who is the virtual table of the class of the method
         final Map<String, STentry> currentSymbolTable = symbolTable.get(nestingLevel);
         final List<TypeNode> parameters = node.parameters.stream()
                 .map(ParNode::getType)
                 .toList();
         final boolean isOverriding = currentSymbolTable.containsKey(node.id);
         final TypeNode methodType = new MethodTypeNode(new ArrowTypeNode(parameters, node.retType));
-        STentry entry = new STentry(nestingLevel, methodType, decOffset++);
+        STentry methodEntry = new STentry(nestingLevel, methodType, decOffset++);
         if (isOverriding) {
             final var overriddenMethodEntry = currentSymbolTable.get(node.id);
             final boolean isOverridingAMethod = overriddenMethodEntry != null && overriddenMethodEntry.type instanceof MethodTypeNode;
             if (isOverridingAMethod) {
-                entry = new STentry(nestingLevel, methodType, overriddenMethodEntry.offset);
+                methodEntry = new STentry(nestingLevel, methodType, overriddenMethodEntry.offset);
                 decOffset--;
             } else {
                 System.out.println("Cannot override a class field with a method: " + node.id);
@@ -575,8 +582,8 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void, VoidException> {
             }
         }
 
-        node.offset = entry.offset;
-        currentSymbolTable.put(node.id, entry);
+        node.offset = methodEntry.offset;
+        currentSymbolTable.put(node.id, methodEntry);
 
         // Create a new table for the method.
         nestingLevel++;
@@ -641,6 +648,46 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void, VoidException> {
         return null;
     }
 
+
+    /**
+     * Visit a ClassCallNode.
+     * Check if the object id was declared doing a lookup in the symbol table, if not, print an error.
+     * If the object id was declared, check if the type is a RefTypeNode, if not, print an error.
+     * If the type is a RefTypeNode, check if the method id is in the virtual table, if not, print an error.
+     * If the method id is in the virtual table, set the entry and the nesting level of the node.
+     * Finally, visit the arguments.
+     *
+     * @param node the ClassCallNode to visit
+     * @return null
+     */
+    @Override
+    public Void visitNode(final ClassCallNode node) {
+        if (print) printNode(node);
+        final STentry classCallEntry = stLookup(node.objectId);
+        if (classCallEntry == null) {
+            System.out.println("Object id " + node.objectId + " was not declared");
+            stErrors++;
+        } else if (classCallEntry.type instanceof final RefTypeNode refTypeNode) {
+            node.entry = classCallEntry;
+            node.nestingLevel = nestingLevel;
+            final Map<String, STentry> virtualTable = classTable.get(refTypeNode.refClassId);
+            // Check if the method id is in the virtual table
+            if (virtualTable.containsKey(node.methodId)) {
+                node.methodEntry = virtualTable.get(node.methodId);
+            } else {
+                System.out.println(
+                        "Object id " + node.objectId + " at line " + node.getLine() + " has no method " + node.methodId
+                );
+                stErrors++;
+            }
+        } else {
+            System.out.println("Object id " + node.objectId + " at line " + node.getLine() + " is not a RefType");
+            stErrors++;
+        }
+        node.args.forEach(this::visit);
+        return null;
+    }
+
     /**
      * Visit a ClassTypeNode.
      *
@@ -676,8 +723,8 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void, VoidException> {
     @Override
     public Void visitNode(final RefTypeNode node) {
         if (print) printNode(node);
-        if (!this.classTable.containsKey(node.refObjectId)) {
-            System.out.println("Class with id: " + node.refObjectId + " on line: " + node.getLine() + " was not declared");
+        if (!this.classTable.containsKey(node.refClassId)) {
+            System.out.println("Class with id: " + node.refClassId + " on line: " + node.getLine() + " was not declared");
             stErrors++;
         }
         return null;

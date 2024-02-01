@@ -653,10 +653,10 @@ public class AST {
      */
     public static class RefTypeNode extends TypeNode {
 
-        final String refObjectId;
+        final String refClassId;
 
         public RefTypeNode(final String classId) {
-            this.refObjectId = classId;
+            this.refClassId = classId;
         }
 
 
