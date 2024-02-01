@@ -628,8 +628,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void, VoidException> {
 
     /**
      * Visit a NewNode.
-     * Check if the class id was declared doing a lookup in the class table.
-     * If the class id was not declared, print an error.
+     * Check if the class id was declared doing a lookup in the class table, if not, print an error.
      * If the class id was declared, set the entry of the node.
      * Finally, visit the arguments.
      *
@@ -643,6 +642,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void, VoidException> {
             System.out.println("Class " + node.classId + " at line " + node.getLine() + " not declared");
             stErrors++;
         }
+        // Attach the class entry to the node
         node.entry = symbolTable.get(0).get(node.classId);
         node.arguments.forEach(this::visit);
         return null;
@@ -663,6 +663,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void, VoidException> {
     @Override
     public Void visitNode(final ClassCallNode node) {
         if (print) printNode(node);
+        // Search for the object id in the symbol table
         final STentry classCallEntry = stLookup(node.objectId);
         if (classCallEntry == null) {
             System.out.println("Object id " + node.objectId + " was not declared");
