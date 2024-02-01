@@ -415,7 +415,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void, VoidException> {
     @Override
     public Void visitNode(final ClassNode node) {
         if (print) printNode(node);
-        ClassTypeNode newClassTypeNode = new ClassTypeNode();
+        ClassTypeNode classTypeNode = new ClassTypeNode();
         final boolean isSubClass = node.superClassId.isPresent();
         final String superId = isSubClass ? node.superClassId.get() : null;
 
@@ -426,16 +426,14 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void, VoidException> {
                 final STentry superSTEntry = symbolTable.get(0).get(superId);
                 final ClassTypeNode superTypeNode = (ClassTypeNode) superSTEntry.type;
                 // Set the super class fields and methods
-                newClassTypeNode = new ClassTypeNode(superTypeNode);
+                classTypeNode = new ClassTypeNode(superTypeNode);
                 node.superEntry = superSTEntry;
             } else {
                 System.out.println("Class " + superId + " at line " + node.getLine() + " not declared");
                 stErrors++;
             }
         }
-        final ClassTypeNode classTypeNode = newClassTypeNode;
         node.setType(classTypeNode);
-
         // Add the class id to the global scope table checking for duplicates
         final STentry entry = new STentry(0, classTypeNode, decOffset--);
         final Map<String, STentry> globalScopeTable = symbolTable.get(0);
