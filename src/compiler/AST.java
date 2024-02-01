@@ -508,7 +508,7 @@ public class AST {
 
         @Override
         public <S, E extends Exception> S accept(BaseASTVisitor<S, E> visitor) throws E {
-            return null;
+            return visitor.visitNode(this);
         }
     }
 
@@ -610,8 +610,8 @@ public class AST {
         final List<ArrowTypeNode> methods;
 
         public ClassTypeNode(final List<TypeNode> fields, final List<ArrowTypeNode> methods) {
-            this.fields = Collections.unmodifiableList(fields);
-            this.methods = Collections.unmodifiableList(methods);
+            this.fields = fields;
+            this.methods = methods;
         }
 
         public ClassTypeNode(final ClassTypeNode parent) {

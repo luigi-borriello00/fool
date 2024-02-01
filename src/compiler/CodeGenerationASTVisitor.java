@@ -39,7 +39,6 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
     public static final String STORE_HEAP_POINTER = "shp";
     public static final String STORE_RA = "sra";
     public static final String STORE_FP = "sfp";
-    public static final String JUMP_TO_SUBROUTINE = "js";
     public static final String LOAD_WORD = "lw";
 
 
@@ -349,12 +348,11 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
     @Override
     public String visitNode(final ClassNode node) {
         if (print) printNode(node);
-
+        // Build the in-memory dispatch table
         final List<String> dispatchTable = new ArrayList<>();
         dispatchTables.add(dispatchTable);
-
         final boolean isSubclass = node.superEntry != null;
-
+        // Add the dispatch table of the superclass
         if (isSubclass) {
             final List<String> superDispatchTable = dispatchTables.get(-node.superEntry.offset - 2);
             dispatchTable.addAll(superDispatchTable);
@@ -362,7 +360,6 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
         // Add a label for each method of the class
         for (final MethodNode methodEntry : node.methods) {
             visit(methodEntry);
-
             final boolean isOverriding = methodEntry.offset < dispatchTable.size();
             // Update the dispatch table
             if (isOverriding) {
@@ -371,7 +368,7 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
                 dispatchTable.add(methodEntry.label);
             }
         }
-
+        // Add the dispatch table to the heap
         String dispatchTableHeapCode = "";
         for (final String label : dispatchTable) {
             // Store method label in heap, increment heap pointer, store heap pointer
@@ -555,7 +552,7 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
                     LOAD_HEAP_POINTER,    // push $hp on the stack
                     PUSH + 1,             // push 1 on the stack
                     ADD,                  // add 1 to $hp
-                    "shp"             // store $hp
+                    STORE_HEAP_POINTER             // store $hp
             );
         }
 
@@ -578,7 +575,7 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
                 LOAD_HEAP_POINTER,  // push $hp on the stack
                 PUSH + 1,           // push 1 on the stack
                 ADD,                // add 1 to $hp
-                "shp"            // store $hp
+                STORE_HEAP_POINTER            // store $hp
         );
 
     }

@@ -76,9 +76,18 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
     @Override
     public Node visitLetInProg(LetInProgContext context) {
         if (print) printVarAndProdName(context);
+        List<DecNode> classDecList = new ArrayList<>();
+        for (CldecContext cldec : context.cldec()) {
+            classDecList.add((DecNode) visit(cldec));
+        }
         List<DecNode> declist = new ArrayList<>();
-        for (DecContext dec : context.dec()) declist.add((DecNode) visit(dec));
-        return new ProgLetInNode(declist, visit(context.exp()));
+        for (DecContext dec : context.dec()) {
+            declist.add((DecNode) visit(dec));
+        }
+        List<DecNode> allDeclarations = new ArrayList<>();
+        allDeclarations.addAll(classDecList);
+        allDeclarations.addAll(declist);
+        return new ProgLetInNode(allDeclarations, visit(context.exp()));
     }
 
     /**
