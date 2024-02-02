@@ -16,13 +16,10 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
     public static final String COPY_FP = "cfp";
     public static final String LOAD_RA = "lra";
     public static final String STORE_TM = "stm";
-    public static final String SET_TM = "stm";
+    public static final String LOAD_TM = "ltm";
     public static final String PUSH = "push ";
     public static final String HALT = "halt";
-    public static final String SET_RA = "sra";
     public static final String POP = "pop";
-    public static final String SET_FP = "sfp";
-    public static final String LOAD_TM = "ltm";
     public static final String JS = "js";
     public static final String BRANCH_EQUAL = "beq ";
     public static final String BRANCH = "b ";
@@ -30,15 +27,28 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
     public static final String ADD = "add";
     public static final String PRINT = "print";
     public static final String LOAD_FP = "lfp";
-    public static final String LOAD_W = "lw";
     public static final String SUB = "sub";
     public static final String BRANCH_LESS_EQ = "bleq ";
     public static final String DIV = "div";
+    /**
+     * Push the value on the top of the stack and store it in HP.
+     */
     public static final String LOAD_HEAP_POINTER = "lhp";
-    public static final String STORE_WORD = "sw";
+    /**
+     * Pop the value on the top of the stack and store it in HP.
+     */
     public static final String STORE_HEAP_POINTER = "shp";
     public static final String STORE_RA = "sra";
     public static final String STORE_FP = "sfp";
+    /**
+     * Pop the address on the top of the stack and
+     * pop the value to store at that address.
+     */
+    public static final String STORE_WORD = "sw";
+    /**
+     * Pop the address on the top of the stack and
+     * push the value stored at that address.
+     */
     public static final String LOAD_WORD = "lw";
 
 
@@ -96,12 +106,12 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
                         LOAD_RA, // load $ra value
                         declCode, // generate code for local declarations (they use the new $fp!!!)
                         visit(node.exp), // generate code for function body expression
-                        SET_TM, // set $tm to popped value (function result)
+                        STORE_TM, // set $tm to popped value (function result)
                         popDecl, // remove local declarations from stack
-                        SET_RA, // set $ra to popped value
+                        STORE_RA, // set $ra to popped value
                         POP, // remove Access Link from stack
                         popParl, // remove parameters from stack
-                        SET_FP, // set $fp to popped value (Control Link)
+                        STORE_FP, // set $fp to popped value (Control Link)
                         LOAD_TM, // load $tm value (function result)
                         LOAD_RA, // load $ra value
                         JS  // jump to popped address
@@ -184,17 +194,19 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
         if (print) printNode(node, node.id);
         String argCode = null, getAR = null;
         for (int i = node.arguments.size() - 1; i >= 0; i--) argCode = nlJoin(argCode, visit(node.arguments.get(i)));
-        for (int i = 0; i < node.nestingLevel - node.entry.nl; i++) getAR = nlJoin(getAR, LOAD_W);
+        for (int i = 0; i < node.nestingLevel - node.entry.nl; i++) getAR = nlJoin(getAR, LOAD_WORD);
         return nlJoin(
                 LOAD_FP, // load Control Link (pointer to frame of function "id" caller)
                 argCode, // generate code for argument expressions in reversed order
                 LOAD_FP, getAR, // retrieve address of frame containing "id" declaration
                 // by following the static chain (of Access Links)
-                SET_TM, // set $tm to popped value (with the aim of duplicating top of stack)
+                STORE_TM, // set $tm to popped value (with the aim of duplicating top of stack)
                 LOAD_TM, // load Access Link (pointer to frame of function "id" declaration)
                 LOAD_TM, // duplicate top of stack
+                // load address of dispatch table if method
+                (node.entry.type instanceof MethodTypeNode) ? LOAD_WORD : "",
                 PUSH + node.entry.offset, ADD, // compute address of "id" declaration
-                LOAD_W, // load address of "id" function
+                LOAD_WORD, // load address of "id" function
                 JS  // jump to popped address (saving address of subsequent instruction in $ra)
         );
     }
@@ -203,12 +215,12 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
     public String visitNode(IdNode node) {
         if (print) printNode(node, node.id);
         String getAR = null;
-        for (int i = 0; i < node.nl - node.entry.nl; i++) getAR = nlJoin(getAR, LOAD_W);
+        for (int i = 0; i < node.nl - node.entry.nl; i++) getAR = nlJoin(getAR, LOAD_WORD);
         return nlJoin(
                 LOAD_FP, getAR, // retrieve address of frame containing "id" declaration
                 // by following the static chain (of Access Links)
                 PUSH + node.entry.offset, ADD, // compute address of "id" declaration
-                LOAD_W // load value of "id" variable
+                LOAD_WORD // load value of "id" variable
         );
     }
 
@@ -354,6 +366,7 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
         final boolean isSubclass = node.superEntry != null;
         // Add the dispatch table of the superclass
         if (isSubclass) {
+            // Get the dispatch table of the superclass
             final List<String> superDispatchTable = dispatchTables.get(-node.superEntry.offset - 2);
             dispatchTable.addAll(superDispatchTable);
         }
@@ -474,7 +487,6 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
     @Override
     public String visitNode(final ClassCallNode node) {
         if (print) printNode(node);
-
         String argumentsCode = "";
         for (int i = node.args.size() - 1; i >= 0; i--) {
             argumentsCode = nlJoin(
@@ -482,7 +494,6 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
                     visit(node.args.get(i))
             );
         }
-
         String getARCode = "";
         for (int i = 0; i < node.nestingLevel - node.entry.nl; i++) {
             getARCode = nlJoin(
@@ -490,33 +501,26 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
                     LOAD_WORD
             );
         }
-
         return nlJoin(
-
-                // Set up the stack frame
                 LOAD_FP,     // push $fp on the stack
                 argumentsCode,      // generate arguments
-
                 // Get the address of the object
                 LOAD_FP, getARCode,         // get AR
                 PUSH + node.entry.offset,   // push class offset on the stack
                 ADD,                        // add class offset to $ar
+                // Go to the object address in the heap
                 LOAD_WORD,                  // load object address
-
-
-                // Duplicate class address
+                // Duplicate class address to set the access link
                 STORE_TM,     // set $tm to popped value (class address)
                 LOAD_TM,      // push class address on the stack
                 LOAD_TM,      // duplicate class address
-
                 // Get the address of the method
                 LOAD_WORD,    // load dispatch table address
                 PUSH + node.methodEntry.offset, // push method offset on the stack
                 ADD,          // add method offset to dispatch table address
                 LOAD_WORD,    // load method address
-
                 // Call the method
-                JS
+                JS // jump to method address which is on the top of the stack
         );
 
     }
@@ -530,7 +534,7 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
     @Override
     public String visitNode(final NewNode node) {
         if (print) printNode(node);
-
+        // Generate code for the arguments
         String argumentsCode = "";
         for (final Node argument : node.arguments) {
             argumentsCode = nlJoin(
@@ -538,16 +542,14 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
                     visit(argument)
             );
         }
-
+        // We have the n° arguments on the stack
         String moveArgsToHeap = "";
         for (final Node argument : node.arguments) {
             moveArgsToHeap = nlJoin(
                     moveArgsToHeap,
-
                     // Store argument on the heap
                     LOAD_HEAP_POINTER,    // push $hp on the stack
                     STORE_WORD,           // store argument on the heap
-
                     // Update $hp = $hp + 1
                     LOAD_HEAP_POINTER,    // push $hp on the stack
                     PUSH + 1,             // push 1 on the stack
@@ -561,13 +563,11 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
                 // Set up arguments on the stack and move them on the heap
                 argumentsCode,      // generate arguments
                 moveArgsToHeap,  // move arguments on the heap
-
                 // Load the address of the dispatch table in the heap
                 PUSH + (ExecuteVM.MEMSIZE + node.entry.offset), // push class address on the stack
                 LOAD_WORD,          // load dispatch table address
                 LOAD_HEAP_POINTER,  // push $hp on the stack
                 STORE_WORD,         // store dispatch table address on the heap
-
                 // Put the result on the stack (object address)
                 LOAD_HEAP_POINTER,  // push $hp on the stack (object address)
 

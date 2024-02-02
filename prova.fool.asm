@@ -9,6 +9,7 @@ lfp
 stm
 ltm
 ltm
+
 push -3
 add
 lw
@@ -53,6 +54,7 @@ lw
 stm
 ltm
 ltm
+
 push -3
 add
 lw
@@ -88,6 +90,7 @@ lfp
 stm
 ltm
 ltm
+
 push -2
 add
 lw
