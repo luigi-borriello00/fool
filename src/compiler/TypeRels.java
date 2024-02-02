@@ -75,9 +75,7 @@ public class TypeRels {
     public static TypeNode lowestCommonAncestor(final TypeNode first, final TypeNode second) {
         if (isSubtype(first, second)) return second;
         if (isSubtype(second, first)) return first;
-
         if (!(first instanceof RefTypeNode firstRefTypeNode)) return null;
-
         return superTypesList(firstRefTypeNode.refClassId)
                 .stream()
                 .map(RefTypeNode::new)
@@ -98,17 +96,6 @@ public class TypeRels {
                 || isEmptyTypeAndRefType(first, second)
                 || isSubclass(first, second)
                 || isMethodOverride(first, second);
-    }
-
-    /**
-     * Check if the first type is a supertype of the second type.
-     *
-     * @param first  The first type
-     * @param second The second type
-     * @return True if the first type is a supertype of the second type, false otherwise
-     */
-    public static boolean isSupertype(final TypeNode first, final TypeNode second) {
-        return isSubtype(second, first);
     }
 
     /**
@@ -133,7 +120,7 @@ public class TypeRels {
 
         // Contravariance of parameters
         for (int i = 0; i < firstArrowTypeNode.parameters.size(); i++) {
-            if (!isSupertype(firstArrowTypeNode.parameters.get(i), secondArrowTypeNode.parameters.get(i))) {
+            if (!isSubtype(secondArrowTypeNode.parameters.get(i), firstArrowTypeNode.parameters.get(i))) {
                 return false;
             }
         }

@@ -12,24 +12,43 @@ import static compiler.lib.FOOLlib.*;
 
 public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidException> {
 
-    // Stack Machine Code Instructions
-    public static final String LOAD_RA = "lra";
-    public static final String STORE_TM = "stm";
-    public static final String LOAD_TM = "ltm";
     public static final String PUSH = "push ";
-    public static final String HALT = "halt";
     public static final String POP = "pop";
-    public static final String JS = "js";
+    public static final String HALT = "halt";
     public static final String BRANCH_EQUAL = "beq ";
     public static final String BRANCH = "b ";
-    public static final String MULTIPLY = "mult";
-    public static final String ADD = "add";
-    public static final String PRINT = "print";
-    public static final String COPY_FRAME_POINTER = "cfp";
-    public static final String LOAD_FRAME_POINTER = "lfp";
-    public static final String SUB = "sub";
     public static final String BRANCH_LESS_EQ = "bleq ";
+    public static final String MULTIPLY = "mult";
     public static final String DIV = "div";
+    public static final String ADD = "add";
+    public static final String SUB = "sub";
+    public static final String PRINT = "print";
+    public static final String JS = "js";
+    /**
+     * Push the value of RA on the stack.
+     */
+    public static final String LOAD_RA = "lra";
+    /**
+     * Store the value on the top of the stack in RA.
+     */
+    public static final String STORE_TM = "stm";
+    /**
+     * Load the value of TM on the stack.
+     */
+    public static final String LOAD_TM = "ltm";
+
+    /**
+     * Copy the value of SP in FP.
+     */
+    public static final String COPY_FRAME_POINTER = "cfp";
+    /**
+     * Push the value of FP on the stack.
+     */
+    public static final String LOAD_FRAME_POINTER = "lfp";
+    /**
+     * Pop the value on the top of the stack and store it in FP.
+     */
+    public static final String STORE_FRAME_POINTER = "sfp";
     /**
      * Push the value on the top of the stack and store it in HP.
      */
@@ -38,8 +57,10 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
      * Pop the value on the top of the stack and store it in HP.
      */
     public static final String STORE_HEAP_POINTER = "shp";
+    /**
+     * Pop the value on the top of the stack and store it in RA.
+     */
     public static final String STORE_RETURN_ADDRESS = "sra";
-    public static final String STORE_FRAME_POINTER = "sfp";
     /**
      * Pop the address on the top of the stack and
      * pop the value to store at that address.
