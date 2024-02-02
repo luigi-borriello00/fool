@@ -418,16 +418,16 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
         // Get the super id if present
         final Optional<String> superId = context.EXTENDS() == null ?
                 Optional.empty() : Optional.of(context.ID(1).getText());
+        // If there is a super id, the fields start from the third ID, otherwise from the second
         final int idPadding = superId.isPresent() ? 2 : 1;
-
         // Get the fields
         final List<FieldNode> fields = new ArrayList<>();
         for (int i = idPadding; i < context.ID().size(); i++) {
-            final String id = context.ID(i).getText();
-            final TypeNode type = (TypeNode) visit(context.type(i - idPadding));
-            final FieldNode f = new FieldNode(id, type);
-            f.setLine(context.ID(i).getSymbol().getLine());
-            fields.add(f);
+            final String fieldId = context.ID(i).getText();
+            final TypeNode fieldType = (TypeNode) visit(context.type(i - idPadding));
+            final FieldNode fieldNode = new FieldNode(fieldId, fieldType);
+            fieldNode.setLine(context.ID(i).getSymbol().getLine());
+            fields.add(fieldNode);
         }
         // Get the methods
         final List<MethodNode> methods = context.methdec().stream()
@@ -451,20 +451,20 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
         if (context.ID().size() == 0) return null; // Incomplete ST
         final String methodId = context.ID(0).getText();
         final TypeNode returnType = (TypeNode) visit(context.type(0));
-        final int idPadding = 1;
+        final int firstParamIdIndex = 1;
         final List<ParNode> parameters = new ArrayList<>();
-        for (int i = idPadding; i < context.ID().size(); i++) {
-            final String id = context.ID(i).getText();
-            final TypeNode type = (TypeNode) visit(context.type(i));
-            final ParNode p = new ParNode(id, type);
-            p.setLine(context.ID(i).getSymbol().getLine());
-            parameters.add(p);
+        for (int i = firstParamIdIndex; i < context.ID().size(); i++) {
+            final String parameterId = context.ID(i).getText();
+            final TypeNode parameterType = (TypeNode) visit(context.type(i));
+            final ParNode parameterNode = new ParNode(parameterId, parameterType);
+            parameterNode.setLine(context.ID(i).getSymbol().getLine());
+            parameters.add(parameterNode);
         }
-
         // Get the declarations
         final List<DecNode> declarations = context.dec().stream()
                 .map(x -> (DecNode) visit(x))
                 .collect(Collectors.toList());
+        // Get the body
         final Node exp = visit(context.exp());
         final MethodNode methodNode = new MethodNode(methodId, returnType, parameters, declarations, exp);
         methodNode.setLine(context.ID(0).getSymbol().getLine());
@@ -485,30 +485,6 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
     }
 
     /**
-     * Visit the DotCall context.
-     * It returns the ClassCallNode built with the object id, the method id and the arguments.
-     *
-     * @param context the parse tree
-     * @return the ClassCallNode built with the object id, the method id and the arguments
-     */
-    @Override
-    public Node visitDotCall(final DotCallContext context) {
-        if (print) printVarAndProdName(context);
-        if (context.ID().size() != 2) return null; // Incomplete ST
-        final String objectId = context.ID(0).getText();
-        final String methodId = context.ID(1).getText();
-        // Visit the arguments
-        final List<Node> arguments = context.exp().stream()
-                .map(this::visit)
-                .collect(Collectors.toList());
-
-        // Build the ClassCallNode
-        final ClassCallNode classCallNode = new ClassCallNode(objectId, methodId, arguments);
-        classCallNode.setLine(context.ID(0).getSymbol().getLine());
-        return classCallNode;
-    }
-
-    /**
      * Visit the New context.
      * It returns the NewNode built with the class id and the arguments.
      *
@@ -523,7 +499,6 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
         final List<Node> arguments = context.exp().stream()
                 .map(this::visit)
                 .toList();
-        // Build the NewNode
         final NewNode newNode = new NewNode(classId, arguments);
         newNode.setLine(context.ID().getSymbol().getLine());
         return newNode;
@@ -543,5 +518,28 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
         final RefTypeNode node = new RefTypeNode(id);
         node.setLine(context.ID().getSymbol().getLine());
         return node;
+    }
+
+    /**
+     * Visit the DotCall context.
+     * It returns the ClassCallNode built with the object id, the method id and the arguments.
+     *
+     * @param context the parse tree
+     * @return the ClassCallNode built with the object id, the method id and the arguments
+     */
+    @Override
+    public Node visitDotCall(final DotCallContext context) {
+        if (print) printVarAndProdName(context);
+        if (context.ID().size() != 2) return null; // Incomplete ST
+        final String objectId = context.ID(0).getText();
+        final String methodId = context.ID(1).getText();
+        // Visit the arguments
+        final List<Node> arguments = context.exp().stream()
+                .map(this::visit)
+                .collect(Collectors.toList());
+        // Create the ClassCallNode
+        final ClassCallNode classCallNode = new ClassCallNode(objectId, methodId, arguments);
+        classCallNode.setLine(context.ID(0).getSymbol().getLine());
+        return classCallNode;
     }
 }

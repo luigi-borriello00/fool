@@ -523,15 +523,15 @@ public class AST {
     public static class ClassNode extends DecNode {
         final String classId;
         final Optional<String> superClassId;
-        final List<FieldNode> fields;
-        final List<MethodNode> methods;
+        final List<FieldNode> allFields;
+        final List<MethodNode> allMethods;
         STentry superEntry;
 
-        public ClassNode(final String classId, final Optional<String> superId, final List<FieldNode> fields, final List<MethodNode> methods) {
+        public ClassNode(final String classId, final Optional<String> superId, final List<FieldNode> allFields, final List<MethodNode> allMethods) {
             this.classId = classId;
             this.superClassId = superId;
-            this.fields = Collections.unmodifiableList(fields);
-            this.methods = Collections.unmodifiableList(methods);
+            this.allFields = Collections.unmodifiableList(allFields);
+            this.allMethods = Collections.unmodifiableList(allMethods);
         }
 
         void setType(final ClassTypeNode type) {
@@ -608,16 +608,16 @@ public class AST {
      * It contains the list of fields and the list of methods.
      */
     public static class ClassTypeNode extends TypeNode {
-        final List<TypeNode> fields;
-        final List<ArrowTypeNode> methods;
+        final List<TypeNode> allFields;
+        final List<ArrowTypeNode> allMethods;
 
-        public ClassTypeNode(final List<TypeNode> fields, final List<ArrowTypeNode> methods) {
-            this.fields = new ArrayList<>(fields);
-            this.methods = new ArrayList<>(methods);
+        public ClassTypeNode(final List<TypeNode> allFields, final List<ArrowTypeNode> allMethods) {
+            this.allFields = new ArrayList<>(allFields);
+            this.allMethods = new ArrayList<>(allMethods);
         }
 
         public ClassTypeNode(final ClassTypeNode parent) {
-            this(parent.fields, parent.methods);
+            this(parent.allFields, parent.allMethods);
         }
 
         public ClassTypeNode() {
@@ -636,7 +636,6 @@ public class AST {
      * It contains the arrow type of the method.
      */
     public static class MethodTypeNode extends TypeNode {
-
         final ArrowTypeNode arrowTypeNode;
 
         public MethodTypeNode(final ArrowTypeNode functionalType) {

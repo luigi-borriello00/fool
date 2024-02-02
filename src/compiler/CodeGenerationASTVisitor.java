@@ -371,7 +371,7 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
             dispatchTable.addAll(superDispatchTable);
         }
         // Add a label for each method of the class
-        for (final MethodNode methodEntry : node.methods) {
+        for (final MethodNode methodEntry : node.allMethods) {
             visit(methodEntry);
             final boolean isOverriding = methodEntry.offset < dispatchTable.size();
             // Update the dispatch table

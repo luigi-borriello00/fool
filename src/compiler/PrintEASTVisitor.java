@@ -212,8 +212,8 @@ public class PrintEASTVisitor extends BaseEASTVisitor<Void, VoidException> {
     @Override
     public Void visitNode(final ClassNode node) throws VoidException {
         printNode(node, node.classId + (node.superClassId.isPresent() ? " extends: " + node.superClassId : ""));
-        node.fields.forEach(this::visit);
-        node.methods.forEach(this::visit);
+        node.allFields.forEach(this::visit);
+        node.allMethods.forEach(this::visit);
         return null;
     }
 
@@ -260,8 +260,8 @@ public class PrintEASTVisitor extends BaseEASTVisitor<Void, VoidException> {
     @Override
     public Void visitNode(final ClassTypeNode node) throws VoidException {
         printNode(node);
-        node.fields.forEach(this::visit);
-        node.methods.forEach(this::visit);
+        node.allFields.forEach(this::visit);
+        node.allMethods.forEach(this::visit);
         return null;
     }
 

@@ -458,14 +458,14 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void, VoidException> {
         int fieldOffset = -1;
         if (isSubClass) {
             final ClassTypeNode superTypeNode = (ClassTypeNode) symbolTable.get(0).get(superId).type;
-            fieldOffset = -superTypeNode.fields.size() - 1;
+            fieldOffset = -superTypeNode.allFields.size() - 1;
         }
 
         /*
          * Visit each field, create the STentry and add it to the virtual table.
          */
         final Set<String> visitedClassNames = new HashSet<>();
-        for (final FieldNode field : node.fields) {
+        for (final FieldNode field : node.allFields) {
             // check for duplicate fields
             if (visitedClassNames.contains(field.id)) {
                 System.out.println(
@@ -490,10 +490,10 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void, VoidException> {
                 } else {
                     // if the field is overridden, the offset is the same in the heap
                     fieldEntry = new STentry(nestingLevel, field.getType(), overriddenFieldEntry.offset);
-                    classTypeNode.fields.set(-fieldEntry.offset - 1, fieldEntry.type);
+                    classTypeNode.allFields.set(-fieldEntry.offset - 1, fieldEntry.type);
                 }
             } else {
-                classTypeNode.fields.add(-fieldEntry.offset - 1, fieldEntry.type);
+                classTypeNode.allFields.add(-fieldEntry.offset - 1, fieldEntry.type);
             }
             // Add the field to the virtual table
             virtualTable.put(field.id, fieldEntry);
@@ -507,10 +507,10 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void, VoidException> {
         decOffset = 0;
         if (isSubClass) {
             final ClassTypeNode superTypeNode = (ClassTypeNode) symbolTable.get(0).get(superId).type;
-            decOffset = superTypeNode.methods.size();
+            decOffset = superTypeNode.allMethods.size();
         }
 
-        for (final MethodNode method : node.methods) {
+        for (final MethodNode method : node.allMethods) {
             if (visitedClassNames.contains(method.id)) {
                 System.out.println(
                         "Method with id " + method.id + " on line " + method.getLine() + " was already declared"
@@ -521,7 +521,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void, VoidException> {
             }
             visit(method);
             final MethodTypeNode methodTypeNode = (MethodTypeNode) symbolTable.get(nestingLevel).get(method.id).type;
-            classTypeNode.methods.add(
+            classTypeNode.allMethods.add(
                     method.offset,
                     methodTypeNode.arrowTypeNode
             );

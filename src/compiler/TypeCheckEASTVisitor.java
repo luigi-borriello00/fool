@@ -489,7 +489,7 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode, TypeExceptio
         }
 
         // visit all methods
-        for (final MethodNode method : node.methods) {
+        for (final MethodNode method : node.allMethods) {
             try {
                 visit(method);
             } catch (TypeException e) {
@@ -506,19 +506,19 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode, TypeExceptio
         final ClassTypeNode parentClassType = (ClassTypeNode) node.superEntry.type;
 
         // visit all fields in the class and check that their types are subtypes of the types of the fields in the super class
-        for (final FieldNode field : node.fields) {
+        for (final FieldNode field : node.allFields) {
             int position = -field.offset - 1;
-            final boolean isOverriding = position < parentClassType.fields.size();
-            if (isOverriding && !isSubtype(classType.fields.get(position), parentClassType.fields.get(position))) {
+            final boolean isOverriding = position < parentClassType.allFields.size();
+            if (isOverriding && !isSubtype(classType.allFields.get(position), parentClassType.allFields.get(position))) {
                 throw new TypeException("Wrong type for field " + field.id, field.getLine());
             }
         }
 
         // visit all methods in the class and check that their types are subtypes of the types of the methods in the super class
-        for (final MethodNode method : node.methods) {
+        for (final MethodNode method : node.allMethods) {
             int position = method.offset;
-            final boolean isOverriding = position < parentClassType.fields.size();
-            if (isOverriding && !isSubtype(classType.methods.get(position), parentClassType.methods.get(position))) {
+            final boolean isOverriding = position < parentClassType.allFields.size();
+            if (isOverriding && !isSubtype(classType.allMethods.get(position), parentClassType.allMethods.get(position))) {
                 throw new TypeException("Wrong type for method " + method.id, method.getLine());
             }
         }
@@ -618,12 +618,12 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode, TypeExceptio
             throw new TypeException("Invocation of a non-constructor " + node.classId, node.getLine());
         }
         // check if the number of parameters is correct
-        if (classTypeNode.fields.size() != node.arguments.size()) {
+        if (classTypeNode.allFields.size() != node.arguments.size()) {
             throw new TypeException("Wrong number of parameters in the invocation of constructor " + node.classId, node.getLine());
         }
         // check if the types of the parameters are correct
         for (int i = 0; i < node.arguments.size(); i++) {
-            if (!(isSubtype(visit(node.arguments.get(i)), classTypeNode.fields.get(i)))) {
+            if (!(isSubtype(visit(node.arguments.get(i)), classTypeNode.allFields.get(i)))) {
                 throw new TypeException("Wrong type for " + (i + 1) + "-th parameter in the invocation of constructor " + node.classId, node.getLine());
             }
         }
@@ -643,8 +643,8 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode, TypeExceptio
     public TypeNode visitNode(final ClassTypeNode node) throws TypeException {
         if (print) printNode(node);
         // Visit all fields and methods
-        for (final TypeNode field : node.fields) visit(field);
-        for (final ArrowTypeNode method : node.methods) visit(method);
+        for (final TypeNode field : node.allFields) visit(field);
+        for (final ArrowTypeNode method : node.allMethods) visit(method);
         return null;
     }
 
