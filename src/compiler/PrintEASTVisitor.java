@@ -239,7 +239,7 @@ public class PrintEASTVisitor extends BaseEASTVisitor<Void, VoidException> {
         printNode(node, node.objectId + "." + node.methodId + " with nesting level: " + node.nestingLevel);
         visit(node.entry);
         visit(node.methodEntry);
-        node.args.forEach(this::visit);
+        node.arguments.forEach(this::visit);
         return null;
     }
 

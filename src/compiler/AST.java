@@ -565,7 +565,7 @@ public class AST {
     public static class ClassCallNode extends Node {
         final String objectId;
         final String methodId;
-        final List<Node> args;
+        final List<Node> arguments;
         int nestingLevel = 0;
         STentry entry;
         STentry methodEntry;
@@ -573,7 +573,7 @@ public class AST {
         public ClassCallNode(final String objectId, final String methodId, final List<Node> args) {
             this.objectId = objectId;
             this.methodId = methodId;
-            this.args = Collections.unmodifiableList(args);
+            this.arguments = Collections.unmodifiableList(args);
         }
 
         @Override

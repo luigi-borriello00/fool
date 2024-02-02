@@ -588,12 +588,12 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode, TypeExceptio
             throw new TypeException("Invocation of a non-function " + node.methodId, node.getLine());
         }
         // check if the number of parameters is correct
-        if (arrowTypeNode.parameters.size() != node.args.size()) {
+        if (arrowTypeNode.parameters.size() != node.arguments.size()) {
             throw new TypeException("Wrong number of parameters in the invocation of method " + node.methodId, node.getLine());
         }
         // check if the types of the parameters are correct
-        for (int i = 0; i < node.args.size(); i++) {
-            if (!(isSubtype(visit(node.args.get(i)), arrowTypeNode.parameters.get(i)))) {
+        for (int i = 0; i < node.arguments.size(); i++) {
+            if (!(isSubtype(visit(node.arguments.get(i)), arrowTypeNode.parameters.get(i)))) {
                 throw new TypeException("Wrong type for " + (i + 1) + "-th parameter in the invocation of method " + node.methodId, node.getLine());
             }
         }

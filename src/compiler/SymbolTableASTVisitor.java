@@ -64,6 +64,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void, VoidException> {
     }
 
     /**
+     * Program entry point.
      * Visit a ProgNode.
      * The expression is visited.
      *
@@ -90,23 +91,24 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void, VoidException> {
     public Void visitNode(FunNode node) {
         if (print) printNode(node);
         Map<String, STentry> currentSymbolTable = symbolTable.get(nestingLevel);
+        // Create the arrow type node for the function
         List<TypeNode> parametersType = new ArrayList<>();
         node.parameters.forEach(par -> parametersType.add(par.getType()));
         final ArrowTypeNode arrowTypeNode = new ArrowTypeNode(parametersType, node.returnType);
         node.setType(arrowTypeNode);
+        // Create the STentry for the function and add it to the current symbol table
         STentry entry = new STentry(nestingLevel, arrowTypeNode, decOffset--);
-        //inserimento di ID nella symtable
         if (currentSymbolTable.put(node.id, entry) != null) {
             System.out.println("Fun id " + node.id + " at line " + node.getLine() + " already declared");
             stErrors++;
         }
-        //creare una nuova hashmap per la symTable
+        // Now we enter the scope of the function
         nestingLevel++;
         Map<String, STentry> newSymbolTable = new HashMap<>();
         symbolTable.add(newSymbolTable);
         int prevNLDecOffset = decOffset; // stores counter for offset of declarations at previous nesting level
         decOffset = -2;
-
+        // this is the offset for the parameters
         int parOffset = 1;
         for (ParNode par : node.parameters) {
             final STentry parEntry = new STentry(nestingLevel, par.getType(), parOffset++);
@@ -683,7 +685,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void, VoidException> {
             System.out.println("Object id " + node.objectId + " at line " + node.getLine() + " is not a RefType");
             stErrors++;
         }
-        node.args.forEach(this::visit);
+        node.arguments.forEach(this::visit);
         return null;
     }
 
