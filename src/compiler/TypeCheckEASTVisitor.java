@@ -83,7 +83,7 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode, TypeExceptio
             } catch (TypeException e) {
                 System.out.println("Type checking error in a declaration: " + e.text);
             }
-        if (!isSubtype(visit(node.exp), ckvisit(node.retType)))
+        if (!isSubtype(visit(node.exp), ckvisit(node.returnType)))
             throw new TypeException("Wrong return type for function " + node.id, node.getLine());
         return null;
     }
@@ -255,7 +255,7 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode, TypeExceptio
      */
     @Override
     public TypeNode visitNode(BoolNode node) {
-        if (print) printNode(node, node.val.toString());
+        if (print) printNode(node, node.value.toString());
         return new BoolTypeNode();
     }
 
@@ -267,7 +267,7 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode, TypeExceptio
      */
     @Override
     public TypeNode visitNode(IntNode node) {
-        if (print) printNode(node, node.val.toString());
+        if (print) printNode(node, node.value.toString());
         return new IntTypeNode();
     }
 
@@ -545,7 +545,7 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode, TypeExceptio
             }
         }
         // visit expression and check if it is a subtype of the return type
-        if (!isSubtype(visit(node.exp), ckvisit(node.retType))) {
+        if (!isSubtype(visit(node.exp), ckvisit(node.returnType))) {
             throw new TypeException("Wrong return type for method " + node.id, node.getLine());
         }
         return null;

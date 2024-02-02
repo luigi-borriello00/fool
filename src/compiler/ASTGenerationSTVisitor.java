@@ -135,6 +135,7 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
     @Override
     public Node visitPlusMinus(PlusMinusContext context) {
         if (context.PLUS() == null) {
+            //
             if (print) printVarAndProdName(context);
             Node node = new MinusNode(visit(context.exp(0)), visit(context.exp(1)));
             node.setLine(context.MINUS().getSymbol().getLine());
@@ -232,7 +233,8 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
     }
 
     /**
-     * Visit the fundec context.
+     * Visit the Funec context.
+     * Visit all the parameters, the declarations and the expression.
      * It returns the FunNode built with the results of the visits.
      *
      * @param context the parse tree
@@ -256,8 +258,6 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
         }
         return node;
     }
-
-    /* Type Nodes */
 
     /**
      * Visit the IntType context.
@@ -326,6 +326,7 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 
     /**
      * Visit the If context.
+     * Visit the condition, the then expression and the else expression.
      * It returns the IfNode built with the results of the visits.
      *
      * @param context the parse tree

@@ -32,7 +32,7 @@ public class PrintEASTVisitor extends BaseEASTVisitor<Void, VoidException> {
     @Override
     public Void visitNode(final FunNode node) {
         printNode(node, node.id);
-        visit(node.retType);
+        visit(node.returnType);
         node.parameters.forEach(this::visit);
         node.declarations.forEach(this::visit);
         visit(node.exp);
@@ -159,20 +159,20 @@ public class PrintEASTVisitor extends BaseEASTVisitor<Void, VoidException> {
 
     @Override
     public Void visitNode(final IdNode node) {
-        printNode(node, node.id + " with nesting level: " + node.nl);
+        printNode(node, node.id + " with nesting level: " + node.nestingLevel);
         visit(node.entry);
         return null;
     }
 
     @Override
     public Void visitNode(final BoolNode node) {
-        printNode(node, String.valueOf(node.val));
+        printNode(node, String.valueOf(node.value));
         return null;
     }
 
     @Override
     public Void visitNode(final IntNode node) {
-        printNode(node, node.val.toString());
+        printNode(node, node.value.toString());
         return null;
     }
 
@@ -227,7 +227,7 @@ public class PrintEASTVisitor extends BaseEASTVisitor<Void, VoidException> {
     @Override
     public Void visitNode(final MethodNode node) throws VoidException {
         printNode(node, node.id);
-        visit(node.retType);
+        visit(node.returnType);
         node.parameters.forEach(this::visit);
         node.declarations.forEach(this::visit);
         visit(node.exp);

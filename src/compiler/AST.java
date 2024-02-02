@@ -52,14 +52,14 @@ public class AST {
      */
     public static class FunNode extends DecNode {
         final String id;
-        final TypeNode retType;
+        final TypeNode returnType;
         final List<ParNode> parameters;
         final List<DecNode> declarations;
         final Node exp;
 
         FunNode(String id, TypeNode retType, List<ParNode> parList, List<DecNode> decList, Node exp) {
             this.id = id;
-            this.retType = retType;
+            this.returnType = retType;
             this.parameters = Collections.unmodifiableList(parList);
             this.declarations = Collections.unmodifiableList(decList);
             this.exp = exp;
@@ -155,6 +155,183 @@ public class AST {
         }
     }
 
+
+    /**
+     * Times node.
+     * It contains the two expressions.
+     */
+    public static class TimesNode extends Node {
+        final Node left;
+        final Node right;
+
+        TimesNode(Node l, Node r) {
+            left = l;
+            right = r;
+        }
+
+        @Override
+        public <S, E extends Exception> S accept(BaseASTVisitor<S, E> visitor) throws E {
+            return visitor.visitNode(this);
+        }
+    }
+
+    /**
+     * Plus node.
+     * It contains the two expressions.
+     */
+    public static class PlusNode extends Node {
+        final Node left;
+        final Node right;
+
+        PlusNode(Node l, Node r) {
+            left = l;
+            right = r;
+        }
+
+        @Override
+        public <S, E extends Exception> S accept(BaseASTVisitor<S, E> visitor) throws E {
+            return visitor.visitNode(this);
+        }
+    }
+
+    /**
+     * Identifier node.
+     * It contains the identifier name, the symbol table entry and the nesting level.
+     */
+    public static class IdNode extends Node {
+        final String id;
+        STentry entry;
+        int nestingLevel;
+
+        IdNode(String i) {
+            id = i;
+        }
+
+        @Override
+        public <S, E extends Exception> S accept(BaseASTVisitor<S, E> visitor) throws E {
+            return visitor.visitNode(this);
+        }
+    }
+
+    /**
+     * Boolean node.
+     * It contains the boolean value.
+     */
+    public static class BoolNode extends Node {
+        final Boolean value;
+
+        BoolNode(boolean n) {
+            value = n;
+        }
+
+        @Override
+        public <S, E extends Exception> S accept(BaseASTVisitor<S, E> visitor) throws E {
+            return visitor.visitNode(this);
+        }
+    }
+
+    /**
+     * Integer node.
+     * It contains the integer value.
+     */
+    public static class IntNode extends Node {
+        final Integer value;
+
+        IntNode(Integer n) {
+            value = n;
+        }
+
+        @Override
+        public <S, E extends Exception> S accept(BaseASTVisitor<S, E> visitor) throws E {
+            return visitor.visitNode(this);
+        }
+    }
+
+    /* Type nodes */
+
+    /**
+     * Arrow type node.
+     * It contains the list of parameter types and the return type.
+     */
+    public static class ArrowTypeNode extends TypeNode {
+        final List<TypeNode> parameters;
+        final TypeNode returnType;
+
+        ArrowTypeNode(List<TypeNode> parTypeList, TypeNode retType) {
+            this.parameters = Collections.unmodifiableList(parTypeList);
+            this.returnType = retType;
+        }
+
+        @Override
+        public <S, E extends Exception> S accept(BaseASTVisitor<S, E> visitor) throws E {
+            return visitor.visitNode(this);
+        }
+    }
+
+    /**
+     * Boolean type node.
+     */
+    public static class BoolTypeNode extends TypeNode {
+
+        @Override
+        public <S, E extends Exception> S accept(BaseASTVisitor<S, E> visitor) throws E {
+            return visitor.visitNode(this);
+        }
+    }
+
+    /**
+     * Integer type node.
+     */
+    public static class IntTypeNode extends TypeNode {
+
+        @Override
+        public <S, E extends Exception> S accept(BaseASTVisitor<S, E> visitor) throws E {
+            return visitor.visitNode(this);
+        }
+    }
+
+    /* Operation nodes */
+
+    /**
+     * Function call node.
+     * It contains the function name, the list of arguments, the symbol table entry and the nesting level.
+     */
+    public static class CallNode extends Node {
+        final String id;
+        final List<Node> arguments;
+        STentry entry;
+        int nestingLevel;
+
+        CallNode(String id, List<Node> arguments) {
+            this.id = id;
+            this.arguments = Collections.unmodifiableList(arguments);
+        }
+
+        @Override
+        public <S, E extends Exception> S accept(BaseASTVisitor<S, E> visitor) throws E {
+            return visitor.visitNode(this);
+        }
+    }
+
+    /**
+     * Print node.
+     * It contains the expression to print.
+     */
+    public static class PrintNode extends Node {
+        final Node exp;
+
+        PrintNode(Node e) {
+            exp = e;
+        }
+
+        @Override
+        public <S, E extends Exception> S accept(BaseASTVisitor<S, E> visitor) throws E {
+            return visitor.visitNode(this);
+        }
+    }
+
+    // OPERATORS EXTENSION
+
     /**
      * Greater equal node.
      * It contains the two expressions.
@@ -249,25 +426,6 @@ public class AST {
     }
 
     /**
-     * Times node.
-     * It contains the two expressions.
-     */
-    public static class TimesNode extends Node {
-        final Node left;
-        final Node right;
-
-        TimesNode(Node l, Node r) {
-            left = l;
-            right = r;
-        }
-
-        @Override
-        public <S, E extends Exception> S accept(BaseASTVisitor<S, E> visitor) throws E {
-            return visitor.visitNode(this);
-        }
-    }
-
-    /**
      * Division node.
      * It contains the two expressions.
      */
@@ -276,25 +434,6 @@ public class AST {
         final Node right;
 
         DivNode(Node l, Node r) {
-            left = l;
-            right = r;
-        }
-
-        @Override
-        public <S, E extends Exception> S accept(BaseASTVisitor<S, E> visitor) throws E {
-            return visitor.visitNode(this);
-        }
-    }
-
-    /**
-     * Plus node.
-     * It contains the two expressions.
-     */
-    public static class PlusNode extends Node {
-        final Node left;
-        final Node right;
-
-        PlusNode(Node l, Node r) {
             left = l;
             right = r;
         }
@@ -324,143 +463,6 @@ public class AST {
         }
     }
 
-    /* Value nodes */
-
-    /**
-     * Identifier node.
-     * It contains the identifier name, the symbol table entry and the nesting level.
-     */
-    public static class IdNode extends Node {
-        final String id;
-        STentry entry;
-        int nl;
-
-        IdNode(String i) {
-            id = i;
-        }
-
-        @Override
-        public <S, E extends Exception> S accept(BaseASTVisitor<S, E> visitor) throws E {
-            return visitor.visitNode(this);
-        }
-    }
-
-    /**
-     * Boolean node.
-     * It contains the boolean value.
-     */
-    public static class BoolNode extends Node {
-        final Boolean val;
-
-        BoolNode(boolean n) {
-            val = n;
-        }
-
-        @Override
-        public <S, E extends Exception> S accept(BaseASTVisitor<S, E> visitor) throws E {
-            return visitor.visitNode(this);
-        }
-    }
-
-    /**
-     * Integer node.
-     * It contains the integer value.
-     */
-    public static class IntNode extends Node {
-        final Integer val;
-
-        IntNode(Integer n) {
-            val = n;
-        }
-
-        @Override
-        public <S, E extends Exception> S accept(BaseASTVisitor<S, E> visitor) throws E {
-            return visitor.visitNode(this);
-        }
-    }
-
-    /* Type nodes */
-
-    /**
-     * Arrow type node.
-     * It contains the list of parameter types and the return type.
-     */
-    public static class ArrowTypeNode extends TypeNode {
-        final List<TypeNode> parameters;
-        final TypeNode returnType;
-
-        ArrowTypeNode(List<TypeNode> parTypeList, TypeNode retType) {
-            this.parameters = Collections.unmodifiableList(parTypeList);
-            this.returnType = retType;
-        }
-
-        @Override
-        public <S, E extends Exception> S accept(BaseASTVisitor<S, E> visitor) throws E {
-            return visitor.visitNode(this);
-        }
-    }
-
-    /**
-     * Boolean type node.
-     */
-    public static class BoolTypeNode extends TypeNode {
-
-        @Override
-        public <S, E extends Exception> S accept(BaseASTVisitor<S, E> visitor) throws E {
-            return visitor.visitNode(this);
-        }
-    }
-
-    /**
-     * Integer type node.
-     */
-    public static class IntTypeNode extends TypeNode {
-
-        @Override
-        public <S, E extends Exception> S accept(BaseASTVisitor<S, E> visitor) throws E {
-            return visitor.visitNode(this);
-        }
-    }
-
-    /* Operation nodes */
-
-    /**
-     * Function call node.
-     * It contains the function name, the list of arguments, the symbol table entry and the nesting level.
-     */
-    public static class CallNode extends Node {
-        final String id;
-        final List<Node> arguments;
-        STentry entry;
-        int nestingLevel;
-
-        CallNode(String id, List<Node> arguments) {
-            this.id = id;
-            this.arguments = Collections.unmodifiableList(arguments);
-        }
-
-        @Override
-        public <S, E extends Exception> S accept(BaseASTVisitor<S, E> visitor) throws E {
-            return visitor.visitNode(this);
-        }
-    }
-
-    /**
-     * Print node.
-     * It contains the expression to print.
-     */
-    public static class PrintNode extends Node {
-        final Node exp;
-
-        PrintNode(Node e) {
-            exp = e;
-        }
-
-        @Override
-        public <S, E extends Exception> S accept(BaseASTVisitor<S, E> visitor) throws E {
-            return visitor.visitNode(this);
-        }
-    }
 
     // Object oriented extension
 
@@ -490,7 +492,7 @@ public class AST {
      */
     public static class MethodNode extends DecNode {
         final String id;
-        final TypeNode retType;
+        final TypeNode returnType;
         final List<ParNode> parameters;
         final List<DecNode> declarations;
         final Node exp;
@@ -498,9 +500,9 @@ public class AST {
 
         String label;
 
-        MethodNode(String id, TypeNode retType, List<ParNode> parList, List<DecNode> decList, Node exp) {
+        MethodNode(String id, TypeNode returnType, List<ParNode> parList, List<DecNode> decList, Node exp) {
             this.id = id;
-            this.retType = retType;
+            this.returnType = returnType;
             this.parameters = Collections.unmodifiableList(parList);
             this.declarations = Collections.unmodifiableList(decList);
             this.exp = exp;

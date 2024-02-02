@@ -215,7 +215,7 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
     public String visitNode(IdNode node) {
         if (print) printNode(node, node.id);
         String getAR = null;
-        for (int i = 0; i < node.nl - node.entry.nl; i++) getAR = nlJoin(getAR, LOAD_WORD);
+        for (int i = 0; i < node.nestingLevel - node.entry.nl; i++) getAR = nlJoin(getAR, LOAD_WORD);
         return nlJoin(
                 LOAD_FP, getAR, // retrieve address of frame containing "id" declaration
                 // by following the static chain (of Access Links)
@@ -226,14 +226,14 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 
     @Override
     public String visitNode(BoolNode node) {
-        if (print) printNode(node, node.val.toString());
-        return PUSH + (node.val ? 1 : 0);
+        if (print) printNode(node, node.value.toString());
+        return PUSH + (node.value ? 1 : 0);
     }
 
     @Override
     public String visitNode(IntNode node) {
-        if (print) printNode(node, node.val.toString());
-        return PUSH + node.val;
+        if (print) printNode(node, node.value.toString());
+        return PUSH + node.value;
     }
 
     // OPERATOR EXTENSIONS

@@ -92,7 +92,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void, VoidException> {
         Map<String, STentry> currentSymbolTable = symbolTable.get(nestingLevel);
         List<TypeNode> parametersType = new ArrayList<>();
         node.parameters.forEach(par -> parametersType.add(par.getType()));
-        final ArrowTypeNode arrowTypeNode = new ArrowTypeNode(parametersType, node.retType);
+        final ArrowTypeNode arrowTypeNode = new ArrowTypeNode(parametersType, node.returnType);
         node.setType(arrowTypeNode);
         STentry entry = new STentry(nestingLevel, arrowTypeNode, decOffset--);
         //inserimento di ID nella symtable
@@ -258,7 +258,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void, VoidException> {
             stErrors++;
         } else {
             node.entry = entry;
-            node.nl = nestingLevel;
+            node.nestingLevel = nestingLevel;
         }
         return null;
     }
@@ -272,7 +272,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void, VoidException> {
      */
     @Override
     public Void visitNode(BoolNode node) {
-        if (print) printNode(node, node.val.toString());
+        if (print) printNode(node, node.value.toString());
         return null;
     }
 
@@ -285,7 +285,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void, VoidException> {
      */
     @Override
     public Void visitNode(IntNode node) {
-        if (print) printNode(node, node.val.toString());
+        if (print) printNode(node, node.value.toString());
         return null;
     }
 
@@ -566,7 +566,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void, VoidException> {
                 .map(ParNode::getType)
                 .toList();
         final boolean isOverriding = currentSymbolTable.containsKey(node.id);
-        final TypeNode methodType = new MethodTypeNode(new ArrowTypeNode(parameters, node.retType));
+        final TypeNode methodType = new MethodTypeNode(new ArrowTypeNode(parameters, node.returnType));
         STentry methodEntry = new STentry(nestingLevel, methodType, decOffset++);
         if (isOverriding) {
             final var overriddenMethodEntry = currentSymbolTable.get(node.id);
