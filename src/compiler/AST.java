@@ -494,7 +494,7 @@ public class AST {
         final List<ParNode> parameters;
         final List<DecNode> declarations;
         final Node exp;
-        int offset;
+        int offset = 0;
 
         String label;
 
@@ -610,8 +610,8 @@ public class AST {
         final List<ArrowTypeNode> methods;
 
         public ClassTypeNode(final List<TypeNode> fields, final List<ArrowTypeNode> methods) {
-            this.fields = fields;
-            this.methods = methods;
+            this.fields = new ArrayList<>(fields);
+            this.methods = new ArrayList<>(methods);
         }
 
         public ClassTypeNode(final ClassTypeNode parent) {
