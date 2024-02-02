@@ -199,6 +199,21 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
     }
 
     /**
+     * Visit the Not context.
+     * It returns the NotNode built with the result of the visit.
+     *
+     * @param context the parse tree
+     * @return the NotNode built with the result of the visit
+     */
+    @Override
+    public Node visitNot(final NotContext context) {
+        if (print) printVarAndProdName(context);
+        final Node node = new NotNode(visit(context.exp()));
+        node.setLine(context.NOT().getSymbol().getLine());
+        return node;
+    }
+
+    /**
      * Visit the vardec context.
      * It returns the VarNode built with the results of the visits.
      *

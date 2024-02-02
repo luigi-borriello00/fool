@@ -470,6 +470,13 @@ lfp
 push 1
 add
 lw
+push 0
+beq label10
+push 0
+b label11
+label10:
+push 1
+label11:
 b label9
 label8:
 lfp
@@ -495,14 +502,14 @@ push 1
 add
 lw
 push -1
-beq label12
+beq label14
 push 0
-b label13
-label12:
+b label15
+label14:
 push 1
-label13:
+label15:
 push 1
-beq label10
+beq label12
 lfp
 lfp
 
@@ -523,12 +530,12 @@ lfp
 push 2
 add
 lw
-bleq label16
+bleq label18
 push 0
-b label17
-label16:
+b label19
+label18:
 push 1
-label17:
+label19:
 lfp
 stm
 ltm
@@ -539,7 +546,7 @@ add
 lw
 js
 push 1
-beq label14
+beq label16
 lfp
 lfp
 push 3
@@ -574,8 +581,8 @@ push -5
 add
 lw
 js
-b label15
-label14:
+b label17
+label16:
 
 lfp
 
@@ -648,11 +655,11 @@ lhp
 push 1
 add
 shp
-label15:
-b label11
-label10:
+label17:
+b label13
+label12:
 push -1
-label11:
+label13:
 stm
 pop
 sra
@@ -673,14 +680,14 @@ push 1
 add
 lw
 push -1
-beq label20
+beq label22
 push 0
-b label21
-label20:
+b label23
+label22:
 push 1
-label21:
+label23:
 push 1
-beq label18
+beq label20
 lfp
 
 lfp
@@ -696,23 +703,23 @@ push 0
 add
 lw
 js
-b label19
-label18:
+b label21
+label20:
 push 0
-label19:
+label21:
 lfp
 push 1
 add
 lw
 push -1
-beq label24
+beq label26
 push 0
-b label25
-label24:
+b label27
+label26:
 push 1
-label25:
+label27:
 push 1
-beq label22
+beq label24
 lfp
 
 lfp
@@ -835,10 +842,10 @@ push -4
 add
 lw
 js
-b label23
-label22:
+b label25
+label24:
 push -1
-label23:
+label25:
 stm
 pop
 sra
