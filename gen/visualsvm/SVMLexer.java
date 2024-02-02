@@ -1,5 +1,5 @@
-// Generated from /Users/giggino/Desktop/compiler/fool/src/svm/SVM.g4 by ANTLR 4.13.1
-package svm;
+// Generated from /Users/giggino/Desktop/compiler/fool/src/visualsvm/SVM.g4 by ANTLR 4.13.1
+package visualsvm;
 import org.antlr.v4.runtime.Lexer;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.Token;
@@ -128,7 +128,7 @@ public class SVMLexer extends Lexer {
 	private void ERR_action(RuleContext _localctx, int actionIndex) {
 		switch (actionIndex) {
 		case 0:
-			 System.out.println("Invalid char: "+getText()+" at line "+getLine()); lexicalErrors++; 
+			 System.out.println("Invalid char: "+ getText()); lexicalErrors++; 
 			break;
 		}
 	}

@@ -7,11 +7,14 @@ import org.antlr.v4.runtime.tree.*;
 import compiler.lib.*;
 import compiler.exc.*;
 import svm.*;
+//import visualsvm.*;
+import java.nio.file.*;
 
 public class Test {
     public static void main(String[] args) throws Exception {
 
-        String fileName = "quicksort.fool";
+        String fileName = "./quicksort.fool";
+
         CharStream chars = CharStreams.fromFileName(fileName);
         FOOLLexer lexer = new FOOLLexer(chars);
         CommonTokenStream tokens = new CommonTokenStream(lexer);
@@ -23,18 +26,18 @@ public class Test {
                 parser.getNumberOfSyntaxErrors() + " syntax errors.\n");
 
         System.out.println("Generating AST.");
-        ASTGenerationSTVisitor visitor = new ASTGenerationSTVisitor(false);
+        ASTGenerationSTVisitor visitor = new ASTGenerationSTVisitor(true); // use true to visualize the ST
         Node ast = visitor.visit(st);
-        System.out.println();
+        System.out.println("");
 
         System.out.println("Enriching AST via symbol table.");
-        SymbolTableASTVisitor symbolTableVisitor = new SymbolTableASTVisitor(false);
-        symbolTableVisitor.visit(ast);
-        System.out.println("You had " + symbolTableVisitor.stErrors + " symbol table errors.\n");
+        SymbolTableASTVisitor symtableVisitor = new SymbolTableASTVisitor(true);
+        symtableVisitor.visit(ast);
+        System.out.println("You had " + symtableVisitor.stErrors + " symbol table errors.\n");
 
         System.out.println("Visualizing Enriched AST.");
         new PrintEASTVisitor().visit(ast);
-        System.out.println();
+        System.out.println("");
 
         System.out.println("Checking Types.");
         try {
@@ -49,17 +52,17 @@ public class Test {
         }
         System.out.println("You had " + FOOLlib.typeErrors + " type checking errors.\n");
 
-        int frontEndErrors = lexer.lexicalErrors + parser.getNumberOfSyntaxErrors() + symbolTableVisitor.stErrors + FOOLlib.typeErrors;
+        int frontEndErrors = lexer.lexicalErrors + parser.getNumberOfSyntaxErrors() + symtableVisitor.stErrors + FOOLlib.typeErrors;
         System.out.println("You had a total of " + frontEndErrors + " front-end errors.\n");
 
         if (frontEndErrors > 0) System.exit(1);
 
         System.out.println("Generating code.");
-        String code = new CodeGenerationASTVisitor(true).visit(ast);
+        String code = new CodeGenerationASTVisitor().visit(ast);
         BufferedWriter out = new BufferedWriter(new FileWriter(fileName + ".asm"));
         out.write(code);
         out.close();
-        System.out.println();
+        System.out.println("");
 
         System.out.println("Assembling generated code.");
         CharStream charsASM = CharStreams.fromFileName(fileName + ".asm");
@@ -75,8 +78,8 @@ public class Test {
 
         System.out.println("Running generated code via Stack Virtual Machine.");
         ExecuteVM vm = new ExecuteVM(parserASM.code);
+//		ExecuteVM vm = new ExecuteVM(parserASM.code,parserASM.sourceMap,Files.readAllLines(Paths.get(fileName+".asm")));
         vm.cpu();
-
 
     }
 }
