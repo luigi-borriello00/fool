@@ -510,7 +510,7 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode, TypeExceptio
         // visit all methods in the class and check that their types are subtypes of the types of the methods in the super class
         for (final MethodNode method : node.allMethods) {
             int position = method.offset;
-            final boolean isOverriding = position < parentClassType.allFields.size();
+            final boolean isOverriding = position < parentClassType.allMethods.size();
             if (isOverriding && !isSubtype(classType.allMethods.get(position), parentClassType.allMethods.get(position))) {
                 throw new TypeException("Wrong type for method " + method.id, method.getLine());
             }
