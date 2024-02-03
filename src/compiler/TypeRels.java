@@ -114,13 +114,11 @@ public class TypeRels {
                 !(secondType instanceof ArrowTypeNode secondArrowTypeNode)) {
             return false;
         }
-
-        // Covariance of return type
+        // Check the covariance of return type
         if (!isSubtype(firstArrowTypeNode.returnType, secondArrowTypeNode.returnType)) {
             return false;
         }
-
-        // Contravariance of parameters
+        // Check the contravariance of parameters
         for (int i = 0; i < firstArrowTypeNode.parameters.size(); i++) {
             if (!isSubtype(secondArrowTypeNode.parameters.get(i), firstArrowTypeNode.parameters.get(i))) {
                 return false;

@@ -481,12 +481,10 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode, TypeExceptio
         if (print) printNode(node, node.classId);
         final boolean isSubClass = node.superClassId.isPresent();
         final String superId = isSubClass ? node.superClassId.get() : null;
-
         // if class has a super class, add it as super type in TypeRels Map
         if (isSubClass) {
             superType.put(node.classId, superId);
         }
-
         // visit all methods
         for (final MethodNode method : node.allMethods) {
             try {
@@ -495,15 +493,12 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode, TypeExceptio
                 System.out.println("Type checking error in a class declaration: " + e.text);
             }
         }
-
         if (!isSubClass || node.superEntry == null) {
             return null;
         }
-
         // get the types of the class and the super class
         final ClassTypeNode classType = (ClassTypeNode) node.getType();
         final ClassTypeNode parentClassType = (ClassTypeNode) node.superEntry.type;
-
         // visit all fields in the class and check that their types are subtypes of the types of the fields in the super class
         for (final FieldNode field : node.allFields) {
             int position = -field.offset - 1;
@@ -512,7 +507,6 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode, TypeExceptio
                 throw new TypeException("Wrong type for field " + field.id, field.getLine());
             }
         }
-
         // visit all methods in the class and check that their types are subtypes of the types of the methods in the super class
         for (final MethodNode method : node.allMethods) {
             int position = method.offset;

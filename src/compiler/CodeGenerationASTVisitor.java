@@ -214,13 +214,14 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
     @Override
     public String visitNode(CallNode node) {
         if (print) printNode(node, node.id);
-        String argCode = null, getAR = null;
+        String argCode = null, getActivationRecord = null;
         for (int i = node.arguments.size() - 1; i >= 0; i--) argCode = nlJoin(argCode, visit(node.arguments.get(i)));
-        for (int i = 0; i < node.nestingLevel - node.entry.nl; i++) getAR = nlJoin(getAR, LOAD_WORD);
+        for (int i = 0; i < node.nestingLevel - node.entry.nl; i++)
+            getActivationRecord = nlJoin(getActivationRecord, LOAD_WORD);
         return nlJoin(
                 LOAD_FRAME_POINTER, // load Control Link (pointer to frame of function "id" caller)
                 argCode, // generate code for argument expressions in reversed order
-                LOAD_FRAME_POINTER, getAR, // retrieve address of frame containing "id" declaration
+                LOAD_FRAME_POINTER, getActivationRecord, // retrieve address of frame containing "id" declaration
                 // by following the static chain (of Access Links)
                 STORE_TM, // set $tm to popped value (with the aim of duplicating top of stack)
                 LOAD_TM, // load Access Link (pointer to frame of function "id" declaration)
@@ -375,6 +376,7 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 
     /**
      * Generate code for the ClassNode node.
+     * Create the dispatch table for the class and store it in the heap.
      *
      * @param node the ClassNode node
      * @return the code generated for the ClassNode node
@@ -420,12 +422,10 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
                     STORE_HEAP_POINTER            // store heap pointer
             );
         }
-
         return nlJoin(
                 LOAD_HEAP_POINTER,      // push heap pointer, the address of the dispatch table
                 dispatchTableHeapCode   // generated code for creating the dispatch table in the heap
         );
-
     }
 
     /**
@@ -496,7 +496,6 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
                         JS                  // jump to return address
                 )
         );
-
         return null;
     }
 
@@ -544,7 +543,6 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
                 // Call the method
                 JS // jump to method address which is on the top of the stack
         );
-
     }
 
     /**
@@ -581,7 +579,6 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
         }
 
         return nlJoin(
-
                 // Set up arguments on the stack and move them on the heap
                 argumentsCode,      // generate arguments
                 moveArgsToHeap,  // move arguments on the heap
