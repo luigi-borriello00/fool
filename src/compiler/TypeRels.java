@@ -4,7 +4,6 @@ import compiler.AST.*;
 import compiler.lib.*;
 
 import java.util.*;
-import java.util.stream.Stream;
 
 /**
  * This class contains the relations between types.
@@ -50,7 +49,7 @@ public class TypeRels {
      * @param type The type to start from
      * @return The List of super types
      */
-    private static List<String> superTypesList(final String type) {
+    private static List<String> getSuperTypeList(final String type) {
         List<String> list = new ArrayList<>();
         String current = type;
         while (current != null) {
@@ -76,7 +75,7 @@ public class TypeRels {
         if (isSubtype(first, second)) return second;
         if (isSubtype(second, first)) return first;
         if (!(first instanceof RefTypeNode firstRefTypeNode)) return null;
-        return superTypesList(firstRefTypeNode.refClassId)
+        return getSuperTypeList(firstRefTypeNode.refClassId)
                 .stream()
                 .map(RefTypeNode::new)
                 .filter(typeOfSuperA -> isSubtype(second, typeOfSuperA))
@@ -86,6 +85,9 @@ public class TypeRels {
 
     /**
      * Check if the first type is a subtype of the second type.
+     * It checks if the first type is a BoolTypeNode and the second type is an IntTypeNode or a BoolTypeNode,
+     * if the first type is an EmptyTypeNode and the second type is a RefTypeNode,
+     * if the first type is a subclass of the second type, or if the first type is a method override of the second type.
      *
      * @param first  The first type
      * @param second The second type
@@ -141,7 +143,7 @@ public class TypeRels {
             return false;
         }
         // Check if the second type is a super type of the first type
-        return superTypesList(firstRefTypeNode.refClassId)
+        return getSuperTypeList(firstRefTypeNode.refClassId)
                 .stream()
                 .anyMatch(secondRefTypeNode.refClassId::equals);
 

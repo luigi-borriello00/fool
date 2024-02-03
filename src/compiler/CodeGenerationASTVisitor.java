@@ -12,6 +12,7 @@ import static compiler.lib.FOOLlib.*;
 
 public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidException> {
 
+    // Define constants for the code generation
     public static final String PUSH = "push ";
     public static final String POP = "pop";
     public static final String HALT = "halt";

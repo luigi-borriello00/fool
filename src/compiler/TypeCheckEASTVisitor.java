@@ -214,6 +214,7 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode, TypeExceptio
     public TypeNode visitNode(CallNode node) throws TypeException {
         if (print) printNode(node, node.id);
         TypeNode typeNode = visit(node.entry);
+        // if the node is a method type, get the functional type
         if (typeNode instanceof MethodTypeNode methodTypeNode) {
             typeNode = methodTypeNode.arrowTypeNode;
         }
@@ -270,8 +271,6 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode, TypeExceptio
         if (print) printNode(node, node.value.toString());
         return new IntTypeNode();
     }
-
-// gestione tipi incompleti	(se lo sono lancia eccezione)
 
     /**
      * Visit a ArrowTypeNode node.
