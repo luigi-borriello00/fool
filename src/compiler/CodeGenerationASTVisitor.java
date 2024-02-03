@@ -12,6 +12,7 @@ import static compiler.lib.FOOLlib.*;
 
 public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidException> {
 
+    private List<List<String>> dispatchTables = new ArrayList<>();
 
     CodeGenerationASTVisitor() {
     }
@@ -367,11 +368,14 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
     public String visitNode(ClassNode n){
         if (print) printNode(n, n.id);
         List<String> dispTable = new ArrayList<>();
+        dispatchTables.add(dispTable);
+        if(n.superID != null){
+            dispTable.addAll(dispatchTables.get(- n.superEntry.offset - 2));
+        }
         for (MethodNode m : n.methods){
             visit(m);
-            dispTable.add(m.label);
+            dispTable.add(m.offset, m.label);
         }
-
         String dispTableCode = "";
         for (String s : dispTable){
             dispTableCode = nlJoin(

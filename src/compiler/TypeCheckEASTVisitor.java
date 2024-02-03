@@ -187,7 +187,7 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode, TypeExceptio
     public TypeNode visitNode(CallNode n) throws TypeException {
         if (print) printNode(n, n.id);
         TypeNode t = visit(n.entry);
-        if(t instanceof MethodTypeNode){
+        if (t instanceof MethodTypeNode) {
             t = ((MethodTypeNode) t).fun;
         }
         if (!(t instanceof ArrowTypeNode))
@@ -259,7 +259,9 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode, TypeExceptio
     @Override
     public TypeNode visitNode(ClassNode n) throws TypeException {
         if (print) printNode(n, n.id);
-
+        if (n.superID != null) {
+            superType.put(n.id, n.superID);
+        }
         for (MethodNode m : n.methods) {
             try {
                 visit(m);
@@ -267,6 +269,23 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode, TypeExceptio
                 System.out.println("Type checking error in a class declaration: " + e.text);
             }
         }
+        if (n.superID != null) {
+            ClassTypeNode superType = (ClassTypeNode) n.superEntry.type;
+            ClassTypeNode type = (ClassTypeNode) n.getType();
+
+            for (int i = 0; i < superType.methods.size(); i++) {
+                if (!isSubtype(type.methods.get(i), superType.methods.get(i))) {
+                    throw new TypeException("Wrong type for override method " + n.methods.get(i).id, type.methods.get(i).getLine());
+                }
+            }
+
+            for (int i = 0; i < superType.fields.size(); i++) {
+                if (!isSubtype(type.fields.get(i), superType.fields.get(i))) {
+                    throw new TypeException("Wrong type for override field " + n.fields.get(i).id, type.fields.get(i).getLine());
+                }
+            }
+        }
+
         return null;
     }
 
@@ -289,7 +308,7 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode, TypeExceptio
     public TypeNode visitNode(ClassCallNode n) throws TypeException {
         if (print) printNode(n, n.id);
         TypeNode t = visit(n.methodEntry);
-        if(t instanceof MethodTypeNode){
+        if (t instanceof MethodTypeNode) {
             t = ((MethodTypeNode) t).fun;
         }
         if (!(t instanceof ArrowTypeNode))

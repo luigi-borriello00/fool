@@ -358,9 +358,7 @@ public class AST {
 
     public static class ClassNode extends DecNode {
         final String id;
-
         final List<FieldNode> fields;
-
         final List<MethodNode> methods;
         final String superID;
         STentry superEntry;
@@ -370,6 +368,10 @@ public class AST {
             fields = Collections.unmodifiableList(f);
             methods = Collections.unmodifiableList(m);
             superID = s;
+        }
+
+        public void setType(ClassTypeNode t) {
+            type = t;
         }
 
         @Override

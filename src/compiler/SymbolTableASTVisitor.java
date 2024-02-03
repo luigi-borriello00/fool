@@ -250,7 +250,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void, VoidException> {
                 n.superEntry = superEntry;
             }
         }
-
+        n.setType(ctn);
         //creo la nuova entry per la classe
         STentry entry = new STentry(0, ctn, decOffset--);
 
