@@ -492,6 +492,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void, VoidException> {
                 } else {
                     // if the field is overridden, the offset is the same in the heap
                     fieldEntry = new STentry(nestingLevel, field.getType(), overriddenFieldEntry.offset);
+                    fieldOffset++;
                     classTypeNode.allFields.set(-fieldEntry.offset - 1, fieldEntry.type);
                 }
             } else {
