@@ -533,6 +533,7 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode, TypeExceptio
         for (final DecNode declaration : node.declarations) {
             try {
                 visit(declaration);
+            } catch (IncomplException ignored) {
             } catch (TypeException e) {
                 System.out.println("Type checking error in a method declaration: " + e.text);
             }
@@ -667,7 +668,7 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode, TypeExceptio
      */
     @Override
     public TypeNode visitNode(final RefTypeNode node) {
-        if (print) printNode(node);
+        if (print) printNode(node, node.refClassId);
         return null;
     }
 

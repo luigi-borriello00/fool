@@ -420,12 +420,12 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void, VoidException> {
         ClassTypeNode classTypeNode = new ClassTypeNode();
         final boolean isSubClass = node.superClassId.isPresent();
         final String superId = isSubClass ? node.superClassId.get() : null;
-
+        final Map<String, STentry> globalScopeTable = symbolTable.get(0);
         if (isSubClass) {
             // Check if the super class is declared
             if (classTable.containsKey(superId)) {
                 // Get the super class entry
-                final STentry superSTEntry = symbolTable.get(0).get(superId);
+                final STentry superSTEntry = globalScopeTable.get(superId);
                 final ClassTypeNode superTypeNode = (ClassTypeNode) superSTEntry.type;
                 // Set the super class fields and methods
                 classTypeNode = new ClassTypeNode(superTypeNode);
@@ -438,7 +438,6 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void, VoidException> {
         node.setType(classTypeNode);
         // Add the class id to the global scope table checking for duplicates
         final STentry entry = new STentry(0, classTypeNode, decOffset--);
-        final Map<String, STentry> globalScopeTable = symbolTable.get(0);
         if (globalScopeTable.put(node.classId, entry) != null) {
             System.out.println("Class id " + node.classId + " at line " + node.getLine() + " already declared");
             stErrors++;
@@ -457,12 +456,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void, VoidException> {
         symbolTable.add(virtualTable);
         // Setting the field offset
         nestingLevel++;
-        int fieldOffset = -1;
-        if (isSubClass) {
-            final ClassTypeNode superTypeNode = (ClassTypeNode) symbolTable.get(0).get(superId).type;
-            fieldOffset = -superTypeNode.allFields.size() - 1;
-        }
-
+        int fieldOffset = -classTypeNode.allFields.size() - 1;
         /*
          * Visit each field, create the STentry and add it to the virtual table.
          */
@@ -507,11 +501,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void, VoidException> {
          * Visit each method, enrich the classTypeNode and visit it.
          */
         int prevDecOffset = decOffset;
-        decOffset = 0;
-        if (isSubClass) {
-            final ClassTypeNode superTypeNode = (ClassTypeNode) symbolTable.get(0).get(superId).type;
-            decOffset = superTypeNode.allMethods.size();
-        }
+        decOffset = classTypeNode.allMethods.size();
 
         for (final MethodNode method : node.allMethods) {
             if (visitedClassNames.contains(method.id)) {

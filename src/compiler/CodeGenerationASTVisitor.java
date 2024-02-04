@@ -470,12 +470,13 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
                     POP
             );
         }
-        final String methodLabel = freshFunLabel();
-        node.label = methodLabel; // set the label of the method
+        // Set the Method Label
+        final String ml = freshFunLabel();
+        node.label = ml;
         // Generate code for the method body
         putCode(
                 nlJoin(
-                        methodLabel + ":",   // method label
+                        ml + ":",   // method label
                         // Set up the stack frame with FP, RA, and declarations
                         COPY_FRAME_POINTER,                    // copy $sp to $fp, the new frame pointer
                         LOAD_RA,                    // push return address
