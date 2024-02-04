@@ -1,5 +1,5 @@
-// Generated from C:/Users/tbrin/Desktop/fool/src/svm/SVM.g4 by ANTLR 4.13.1
-package svm;
+// Generated from C:/Users/tbrin/Desktop/fool/src/visualsvm/SVM.g4 by ANTLR 4.13.1
+package visualsvm;
 import org.antlr.v4.runtime.tree.ParseTreeVisitor;
 
 /**

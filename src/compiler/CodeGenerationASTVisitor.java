@@ -279,8 +279,8 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
     public String visitNode(CallNode n) {
         if (print) printNode(n, n.id);
         String loadARaddr = "";
-        if(n.entry.type instanceof MethodTypeNode){
-             loadARaddr = "lw";
+        if (n.entry.type instanceof MethodTypeNode) {
+            loadARaddr = "lw";
         }
         String argCode = null, getAR = null;
         for (int i = n.arglist.size() - 1; i >= 0; i--) {
@@ -311,7 +311,7 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
         for (int i = 0; i < n.nl - n.entry.nl; i++) getAR = nlJoin(getAR, "lw");
         return nlJoin(
                 "lfp", getAR,                  // retrieve address of frame containing "id" declaration
-                                                    // by following the static chain (of Access Links)
+                // by following the static chain (of Access Links)
                 "push " + n.entry.offset, "add", // compute address of "id" declaration
                 "lw" // load value of "id" variable
         );
@@ -365,19 +365,24 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
     }
 
     @Override
-    public String visitNode(ClassNode n){
+    public String visitNode(ClassNode n) {
         if (print) printNode(n, n.id);
         List<String> dispTable = new ArrayList<>();
         dispatchTables.add(dispTable);
-        if(n.superID != null){
-            dispTable.addAll(dispatchTables.get(- n.superEntry.offset - 2));
+        if (n.superID != null) {
+            dispTable.addAll(dispatchTables.get(-n.superEntry.offset - 2));
         }
-        for (MethodNode m : n.methods){
+        for (MethodNode m : n.methods) {
             visit(m);
-            dispTable.add(m.offset, m.label);
+            boolean override = m.offset < dispTable.size();
+            if (override) {
+                dispTable.set(m.offset, m.label);
+            } else {
+                dispTable.add(m.offset, m.label);
+            }
         }
         String dispTableCode = "";
-        for (String s : dispTable){
+        for (String s : dispTable) {
             dispTableCode = nlJoin(
                     dispTableCode,
                     "push " + s,
@@ -397,13 +402,13 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
     }
 
     @Override
-    public String visitNode(EmptyNode n){
+    public String visitNode(EmptyNode n) {
         if (print) printNode(n);
         return "push -1";
     }
 
     @Override
-    public String visitNode(ClassCallNode n){
+    public String visitNode(ClassCallNode n) {
         if (print) printNode(n, n.id);
 
         String argCode = null, getAR = null;
@@ -436,7 +441,7 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
     }
 
     @Override
-    public String visitNode(NewNode n){
+    public String visitNode(NewNode n) {
         if (print) printNode(n, n.id);
 
         String argCode = null, argHeapCode = null;
@@ -445,7 +450,7 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
             argCode = nlJoin(argCode, visit(n.arglist.get(i)));
         }
 
-        for (int i = 0; i < n.arglist.size(); i++){
+        for (int i = 0; i < n.arglist.size(); i++) {
             argHeapCode = nlJoin(
                     argHeapCode,
                     "lhp",

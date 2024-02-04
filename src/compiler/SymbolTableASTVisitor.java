@@ -286,7 +286,8 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void, VoidException> {
             }
             visit(field);
 
-            STentry fieldEntry = null;
+            // Nel caso di dichiarazione di un campo con un nome di un metodo, verrà tenuta la entry già dichiarata
+            STentry fieldEntry = new STentry(nestingLevel, field.getType(), fieldOffset--);;
 
             if (virtualTable.containsKey(field.id)) {
                 STentry parent = virtualTable.get(field.id);
@@ -295,15 +296,15 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void, VoidException> {
                     stErrors++;
                 } else {
                     fieldEntry = new STentry(nestingLevel, field.getType(), parent.offset);
+                    ctn.fields.set(-fieldEntry.offset - 1, fieldEntry.type);
+                    fieldOffset++;
                 }
             } else {
-                fieldEntry = new STentry(nestingLevel, field.getType(), fieldOffset--);
+                ctn.fields.add(-fieldEntry.offset - 1, fieldEntry.type);
             }
 
-            if(fieldEntry != null) {
-                ctn.fields.add(-fieldEntry.offset - 1, fieldEntry.type);
-                virtualTable.put(field.id, fieldEntry);
-            }
+            virtualTable.put(field.id, fieldEntry);
+
         }
 
         int precOffset = decOffset;
@@ -338,23 +339,22 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void, VoidException> {
         Map<String, STentry> virtualTable = symTable.get(nestingLevel);
         List<TypeNode> parTypes = new ArrayList<>();
         for (ParNode par : n.parlist) parTypes.add(par.getType());
-        STentry entry = null;
         MethodTypeNode methodTypeNode = new MethodTypeNode(new ArrowTypeNode(parTypes, n.retType));
+        STentry entry = new STentry(nestingLevel, methodTypeNode, decOffset++);;
+
         if(virtualTable.containsKey(n.id)){
             if(virtualTable.get(n.id).type instanceof MethodTypeNode){
-                entry = new STentry(nestingLevel, methodTypeNode, virtualTable.get(n.id).offset);;
+                entry = new STentry(nestingLevel, methodTypeNode, virtualTable.get(n.id).offset);
+                decOffset--;
             } else {
                 System.out.println("Method id " + n.id + " at line " + n.getLine() + " already declared as field");
                 stErrors++;
             }
-        } else {
-            entry = new STentry(nestingLevel, methodTypeNode, decOffset++);
         }
-        if (entry != null) {
-            n.offset = entry.offset;
-            //inserimento di ID nella symtable
-            virtualTable.put(n.id, entry);
-        }
+
+        n.offset = entry.offset;
+        //inserimento di ID nella symtable
+        virtualTable.put(n.id, entry);
 
         //creare una nuova hashmap per la symTable
         nestingLevel++;

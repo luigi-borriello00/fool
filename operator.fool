@@ -1,0 +1,9 @@
+let
+    var x:int = 5;
+    fun y:int()
+        let
+          var x:int = 20;
+        in print(x);
+    var z:int = 15;
+in
+    print(y());
